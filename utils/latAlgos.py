@@ -24,7 +24,7 @@ def anaUltraLatencyStar(inputs):
     """
     return anaUltraLatency(*inputs)
 
-def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=None, outputDir=None, outfilename="latencyAna.root", performFit=False):
+def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=None, outputDir=None, outfilename="latencyAna.root", performFit=False, gemType="ge11"):
     """
     Analyzes data taken by ultraLatency.py
 
@@ -71,6 +71,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         inFile.Close()
         raise IOError("Input file {0} is a Zombie, check to make sure you have write permissions and file has expected size".format(infilename))
 
+    from gempython.tools.hw_constants import vfatsPerGemVariant
     # Get ChipID's
     import numpy as np
     import root_numpy as rp
@@ -81,7 +82,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         for entry in array_chipID:
             dict_chipID[entry['vfatN']]=entry['vfatID']
     else:
-        dict_chipID = { vfat:0 for vfat in range(24) }
+        dict_chipID = { vfat:0 for vfat in range(vfatsPerGemVariant[gemType]) }
 
     if debug:
         print("VFAT Position to ChipID Mapping")
@@ -98,7 +99,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     from gempython.utils.gemlogger import printYellow
     from gempython.utils.nesteddict import nesteddict as ndict
     dict_hVFATHitsVsLat = ndict()
-    for vfat in range(0,24):
+    for vfat in range(0,vfatsPerGemVariant[gemType]):
         try:
             chipID = dict_chipID[vfat]
         except KeyError as err:
@@ -129,13 +130,15 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         pass
 
     from math import sqrt
-    for vfat in range(0,24):
+    for vfat in range(0,vfatsPerGemVariant[gemType]):
         for binX in range(1, dict_hVFATHitsVsLat[vfat].GetNbinsX()+1):
             dict_hVFATHitsVsLat[vfat].SetBinError(binX, sqrt(dict_hVFATHitsVsLat[vfat].GetBinContent(binX)))
 
     hHitsVsLat_AllVFATs = dict_hVFATHitsVsLat[0].Clone("hHitsVsLat_AllVFATs")
     hHitsVsLat_AllVFATs.SetTitle("Sum over all VFATs")
-    for vfat in range(1,24):
+    #### QUESTION 
+    # why is this only [1-24)
+    for vfat in range(1,vfatsPerGemVariant[gemType]):
         hHitsVsLat_AllVFATs.Add(dict_hVFATHitsVsLat[vfat])
 
     # Set Latency Fitting Bounds - Signal
@@ -294,12 +297,13 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         pass
 
     # Store - Summary
-    from gempython.gemplotting.utils.anautilities import make3x8Canvas
+    from gempython.gemplotting.utils.anautilities import getSummaryCanvas, addPlotToCanvas
     if performFit:
-        canv_Summary = make3x8Canvas('canv_Summary', dict_grNHitsVFAT, 'APE1', dict_fitNHitsVFAT_Noise, '')
+        canv_Summary = getSummaryCanvas(dict_grNHitsVFAT, name='canv_Summary', drawOpt='APE1', gemType=gemType)
+        canv_Summary = addPlotToCanvas(canv_Summary, dict_fitNHitsVFAT_Noise, gemType)
         canv_Summary.SaveAs(outputDir+'/Summary.png')
     else:
-        canv_Summary = make3x8Canvas('canv_Summary', dict_grNHitsVFAT, 'APE1')
+        canv_Summary = getSummaryCanvas(dict_grNHitsVFAT, name='canv_Summary', drawOpt='APE1', gemType)
         canv_Summary.SaveAs(outputDir+'/Summary.png')
 
     # Store - Sig Over Bkg
@@ -316,7 +320,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         grVFATSigOverBkg.GetYaxis().SetTitle("Sig / Bkg)")
         grVFATSigOverBkg.GetYaxis().SetTitleOffset(1.25)
         grVFATSigOverBkg.GetYaxis().SetRangeUser(1e-1,1e2)
-        grVFATSigOverBkg.GetXaxis().SetRangeUser(-0.5,24.5)
+        grVFATSigOverBkg.GetXaxis().SetRangeUser(-0.5,vfatsPerGemVariant[gemType] +0.5)
         grVFATSigOverBkg.Draw("APE1")
         canv_SigOverBkg.SaveAs(outputDir+'/SignalOverBkg.png')
 
@@ -332,7 +336,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         grVFATNSignalNoBkg.GetYaxis().SetTitle("Signal Hits")
         grVFATNSignalNoBkg.GetYaxis().SetTitleOffset(1.5)
         grVFATNSignalNoBkg.GetYaxis().SetRangeUser(0,nTrig)
-        grVFATNSignalNoBkg.GetXaxis().SetRangeUser(-0.5,24.5)
+        grVFATNSignalNoBkg.GetXaxis().SetRangeUser(-0.5, vfatsPerGemVariant[gemType]+0.5)
         grVFATNSignalNoBkg.Draw("APE1")
         canv_Signal.SaveAs(outputDir+'/SignalNoBkg.png')
 
@@ -353,7 +357,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     grNMaxLatBinByVFAT.SetMarkerStyle(21)
     grNMaxLatBinByVFAT.SetMarkerSize(0.7)
     grNMaxLatBinByVFAT.SetLineWidth(2)
-    grNMaxLatBinByVFAT.GetXaxis().SetRangeUser(-0.5,24.5)
+    grNMaxLatBinByVFAT.GetXaxis().SetRangeUser(-0.5,vfatsPerGemVariant[gemType] +0.5)
     grNMaxLatBinByVFAT.GetXaxis().SetTitle("VFAT Pos")
     grNMaxLatBinByVFAT.GetYaxis().SetRangeUser(0,nTrig)
     grNMaxLatBinByVFAT.GetYaxis().SetTitle("Hit Count of Max Lat Bin")
@@ -367,7 +371,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     grMaxLatBinByVFAT.GetXaxis().SetTitle("VFAT Pos")
     grMaxLatBinByVFAT.GetYaxis().SetTitle("Max Lat Bin")
     grMaxLatBinByVFAT.GetYaxis().SetTitleOffset(1.2)
-    grMaxLatBinByVFAT.GetXaxis().SetRangeUser(-0.5,24.5)
+    grMaxLatBinByVFAT.GetXaxis().SetRangeUser(-0.5,vfatsPerGemVariant[gemType]+0.5)
     grMaxLatBinByVFAT.Draw("APE1")
     canv_MaxHitsPerLatByVFAT.SaveAs(outputDir+'/MaxHitsPerLatByVFAT.png')
 
