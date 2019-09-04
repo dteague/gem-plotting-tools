@@ -45,6 +45,9 @@ if __name__ == "__main__":
     r.gROOT.SetBatch(True)
     r.gStyle.SetOptStat(1111111)
 
+    gemType = "ge11"
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    
     # Open input file
     print("Opening input file: {0}".format(args.infile))
     infile = r.TFile(args.infile,"READ")
@@ -74,7 +77,7 @@ if __name__ == "__main__":
     # Make nested containers
     from gempython.utils.nesteddict import nesteddict as ndict
     baseDir = ndict() # baseDir[slot][oh] -> string
-    vfatDirs = ["VFAT-%d"%x for x in range(24)]
+    vfatDirs = ["VFAT-%d"%x for x in range(vfatsPerGemVariant[gemType])]
 
     allVFATsLatency = ndict()   #   allVFATsLatency[slot][oh]      -> histogram
     dictMapping = ndict()       #   dictMapping[slot][oh]          -> mapping dict
@@ -85,7 +88,7 @@ if __name__ == "__main__":
     vfatLatHists2D = ndict()    #   vfatHists2D[slot][oh][vfatN]   -> histogram
 
     # Get channel mapping?
-    from gempython.gemplotting.utils.anautilities import getMapping, make3x8Canvas
+    from gempython.gemplotting.utils.anautilities import getMapping, getSummaryCanvas
     if args.mapping is not None:
         print("Getting mapping")
         # Try to get the mapping data
@@ -234,11 +237,11 @@ if __name__ == "__main__":
 
         # Print Canvas
         r.gStyle.SetOptStat(0)
-        canvHitMulti = make3x8Canvas("canvHitMulti_AMC{0}_OH{1}".format(args.slot,oh),vfatHitMulti[args.slot][oh],"hist")
-        canvLat1D = make3x8Canvas("canvLatScan1D_AMC{0}_OH{1}".format(args.slot,oh),vfatLatHists[args.slot][oh],"hist")
-        canvLat2D = make3x8Canvas("canvLatScan2D_AMC{0}_OH{1}".format(args.slot,oh),vfatLatHists2D[args.slot][oh],"colz")
+        canvHitMulti = getSummaryCanvas(vfatHitMulti[args.slot][oh], name="canvHitMulti_AMC{0}_OH{1}".format(args.slot,oh), drawOpt="hist", gemType=gemType)
+        canvLat1D = getSummaryCanvas(vfatLatHists[args.slot][oh], name="canvLatScan1D_AMC{0}_OH{1}".format(args.slot,oh), drawOpt="hist", gemType=gemType)
+        canvLat2D = getSummaryCanvas(vfatLatHists2D[args.slot][oh], name="canvLatScan2D_AMC{0}_OH{1}".format(args.slot,oh), drawOpt="colz", gemType=gemType)
         
-        for vfat in range(0,24):
+        for vfat in range(0,vfatsPerGemVariant[gemType]):
             canvHitMulti.cd(vfat).SetLogx()
             canvHitMulti.cd(vfat).SetLogy()
             canvLat1D.cd(vfat).SetLogy()

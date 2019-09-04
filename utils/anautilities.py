@@ -43,7 +43,7 @@ def cleanup(listOfFilePaths,listOfFileObjects=None,listOfTFiles=None,perm="g+rw"
 
     return
 
-def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
+def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemType="gem11"):
     """
     Analyzes DAC scan data to determine nominal bias current/voltage settings for a particular VFAT3 DAC.
     Returns a dictionary where:
@@ -181,7 +181,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             link    = dataEntry[2]
             calFile = dataEntry[3]
             ohKey = (int(shelf),int(slot),int(link))
-            tuple_calInfo = parseCalFile(calFile)
+            tuple_calInfo = parseCalFile(calFile, gemType=gemType)
             calInfo[ohKey] = {'slope' : tuple_calInfo[0], 'intercept' : tuple_calInfo[1]}
 
     #for each OH, check if calibration files were provided, if not search for the calFile in the $DATA_PATH, if it is not there, then skip that OH for the rest of the script
@@ -193,7 +193,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             calAdcCalFile = "{0}/{1}/calFile_{2}_{1}.txt".format(dataPath,detName,adcName)
             calAdcCalFileExists = os.path.isfile(calAdcCalFile)
             if calAdcCalFileExists:
-                tuple_calInfo = parseCalFile(calAdcCalFile)
+                tuple_calInfo = parseCalFile(calAdcCalFile, gemType=gemType)
                 calInfo[ohKey] = {'slope' : tuple_calInfo[0], 'intercept' : tuple_calInfo[1]}
             else:    
                 # FIXME should perform a DB query with chipID's in input dacScanTree to get calibration constants
@@ -217,12 +217,13 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
 
     print("Initializing TObjects")
 
+    from gempython.tools.hw_constants import vfatsPerGemVariant
     # Initialize a TGraphErrors and a TF1 for each vfat
     for idx in range(len(dacNameArray)):
         dacName = np.asscalar(dacNameArray[idx])
         for entry in crateMap:
             ohKey = (entry['shelf'],entry['slot'],entry['link'])
-            for vfat in range(0,24):
+            for vfat in range(0,vfatsPerGemVariant[gemType]):
                 dict_RawADCvsDAC_Graphs[dacName][ohKey][vfat] = r.TGraphErrors()
                 dict_RawADCvsDAC_Graphs[dacName][ohKey][vfat].GetXaxis().SetTitle(dacName)
                 dict_RawADCvsDAC_Graphs[dacName][ohKey][vfat].GetYaxis().SetTitle(adcName)
@@ -299,7 +300,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
         dacName = np.asscalar(dacNameArray[idx])
         for entry in crateMap:
             ohKey = (entry['shelf'],entry['slot'],entry['link'])
-            for vfat in range(0,24):
+            for vfat in range(0,vfatsPerGemVariant[gemType]):
                 if vfat not in dict_nonzeroVFATs[ohKey]:
                     #so that the output plots for these VFATs are completely empty
                     dict_DACvsADC_Funcs[dacName][ohKey][vfat].SetLineColor(0)
@@ -331,7 +332,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             graph_dacVals[dacName][ohKey].GetXaxis().SetTitle("VFATN")
             graph_dacVals[dacName][ohKey].GetYaxis().SetTitle("nominal {} value".format(dacName))
 
-            for vfat in range(0,24):
+            for vfat in range(0,vfatsPerGemVariant[gemType]):
                 if vfat not in dict_nonzeroVFATs[ohKey]:
                     continue
 
@@ -373,7 +374,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
         ohKey = (entry['shelf'],entry['slot'],entry['link'])
         detName = getDetName(entry)
         # Per VFAT Poosition
-        for vfat in range(0,24):
+        for vfat in range(0,vfatsPerGemVariant[gemType]):
             thisVFATDir = outputFiles[ohKey].mkdir("VFAT{0}".format(vfat))
 
             for idx in range(len(dacNameArray)):
@@ -399,7 +400,8 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             graph_dacVals[dacName][ohKey].Write("g_NominalvsVFATPos_{0}".format(dacName))
 
             # Store summary grid canvas and print images
-            canv_Summary = make3x8Canvas("canv_Summary_{0}".format(dacName),dict_DACvsADC_Graphs[dacName][ohKey],'APE1',dict_DACvsADC_Funcs[dacName][ohKey],'')
+            canv_Summary = getSummaryCanvas(dict_DACvsADC_Graphs[dacName][ohKey], name="canv_Summary_{0}".format(dacName), drawOpt='APE1', gemType=gemType)
+            canv_Summary = addPlotToCanvas(canv_Summary, dict_DACvsADC_Funcs[dacName][ohKey], gemType=gemType)
             if scandate == 'noscandate':
                 canv_Summary.SaveAs("{0}/{1}/Summary_{1}_DACScan_{2}.png".format(elogPath,detName,dacName))
             else:
@@ -415,7 +417,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             for idx in range(len(dacNameArray)):
                 dacName = np.asscalar(dacNameArray[idx])
             
-                for vfat in range(0,24):
+                for vfat in range(0,vfatsPerGemVariant[gemType]):
                     if vfat not in dict_nonzeroVFATs[ohKey]:
                         continue
 
@@ -554,7 +556,7 @@ def formatSciNotation(value, digits=2):
 
     return sciNotation % Decimal(value)
 
-def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel):
+def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel, gemType="ge11"):
     """
     Generates a 2D map of the detector as a TH2D. Y-axis will be ieta. X-axis will be ROBstr (strip),
     vfat channel or panasonic pin number.  The z-axis will be the elements of obsData with label zLabel
@@ -577,24 +579,28 @@ def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel):
         raise LookupError
 
     import ROOT as r
-    hRetMap = r.TH2F("ieta_vs_%s_%s"%(mapName,zLabel),"",384,-0.5,383.5,8,0.5,8.5)
+    from ..mapping.chamberInfo import chamber_maxiEtaiPhiPair
+    maxiEta, maxiPhi = chamber_maxiEtaiPhiPair[gemType]
+    
+    hRetMap = r.TH2F("ieta_vs_%s_%s"%(mapName,zLabel),"",maxiPhi*128, -0.5, maxiPhi*128-0.5, maxiEta, 0.5, maxiEta + 0.5)
     hRetMap.SetXTitle(mapName)
     hRetMap.SetYTitle("i#eta")
     hRetMap.SetZTitle(zLabel)
 
     from gempython.gemplotting.mapping.chamberInfo import chamber_vfatPos2iEtaiPhi
-    for idx in range(3072):
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    for idx in range(128*vfatsPerGemVariant[gemType]):
         # Determine vfat, ieta, and iphi
         vfat = idx // 128
-        ieta = chamber_vfatPos2iEtaiPhi[vfat][0]
-        iphi = chamber_vfatPos2iEtaiPhi[vfat][1]
+        ieta = chamber_vfatPos2iEtaiPhi[gemType][vfat][0]
+        iphi = chamber_vfatPos2iEtaiPhi[gemType][vfat][1]
 
         # Determine strip, panasonic pin, or channel
         chan = idx % 128
         stripPinOrChan = vfatChanLUT[vfat][mapName][chan]
 
-        # Set Bin Content of Histogram
-        hRetMap.SetBinContent( ((iphi-1)*128+stripPinOrChan)+1, ieta, obsData[idx])
+        # Set Bin Content of Histogrma
+        hRetMap.SetBinContent(((iphi-1)*128+stripPinOrChan)+1, ieta, obsData[idx])
         pass
 
     return hRetMap
@@ -758,7 +764,7 @@ def getGEBTypeFromFilename(filename, cName=None):
     else:
         return None
 
-def getMapping(mappingFileName, isVFAT2=True):
+def getMapping(mappingFileName, isVFAT2=True, gemType="ge11"):
     """
     Returns a nested dictionary, the outer dictionary uses VFAT position as the has a key,
     the inner most dict has keys from the list anaInfo.py mappingNames.
@@ -788,10 +794,12 @@ def getMapping(mappingFileName, isVFAT2=True):
                         PanPin - the pin number on the panasonic connector
     """
     from ...utils.nesteddict import nesteddict
-
+    
     from anaInfo import mappingNames
     import ROOT as r
-
+    
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    
     # Try to get the mapping data
     try:
         mapFile = open(mappingFileName, 'r')
@@ -806,9 +814,9 @@ def getMapping(mappingFileName, isVFAT2=True):
     # strip trhe end of line character
     listMapData = [x.strip('\n') for x in listMapData]
 
-    # setup the look up table
+        # setup the look up table
     ret_mapDict = nesteddict()
-    for vfat in range(0,24):
+    for vfat in range(0,vfatsPerGemVariant[gemType]):
         for name in mappingNames:
             ret_mapDict[vfat][name] = [0] * 128
 
@@ -863,7 +871,7 @@ def getNumCores2Use(args):
 
     return int(usageFactor*availableCores)
 
-def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff,savePlots=True): 
+def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff,savePlots=True, gemType="ge11"): 
     """
     Plots GBT phase scan data as a TH2F and the GBT phase set points as a TGraph for
     each optohybrid found in the two input files.  Note it's assume that if OHX is in
@@ -1046,7 +1054,7 @@ def getScandateFromFilename(infilename):
     else:    
         return 'noscandate'
 
-def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,savePlots=True):
+def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,savePlots=True, gemType="ge11"):
     """
     As getPhaseScanPlots but for a single optohybrid, defined by ohN, inside the input files.
     Returns a tuple where elements are given by:
@@ -1066,7 +1074,7 @@ def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,sav
     """
 
     ohMask = (0x1 << ohN)
-    tuplePlotDicts = getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier,ohMask,False)
+    tuplePlotDicts = getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier,ohMask,False, gemType=gemType)
     
     phaseScanDist   = tuplePlotDicts[0][ohN]
     phaseScanSetPts = tuplePlotDicts[1][ohN]
@@ -1225,70 +1233,6 @@ def isOutlierMADOneSided(arrayData, thresh=3.5, rejectHighTail=True):
         else:
             return modified_z_score < -1.0 * thresh
 
-def make2x4Canvas(name, initialContent = None, initialDrawOpt = '', secondaryContent = None, secondaryDrawOpt = '', canv=None):
-    """
-    Creates a 2x4 canvas for summary plots.
-
-    name - TName of output TCanvas
-    initialContent - either None or an array of 24 (one per VFAT) TObjects that will be drawn on the canvas.
-    initialDrawOpt - draw option to be used when drawing elements of initialContent
-    secondaryContent - either None or an array of 24 (one per VFAT) TObjects that will be drawn on top of the canvas.
-    secondaryDrawOpt - draw option to be used when drawing elements of secondaryContent
-    canv - TCanvas previously produced by make3x8Canvas() or one that has been subdivided into a 3x8 grid
-    """
-
-    import ROOT as r
-    
-    if canv is None:
-        canv = r.TCanvas(name,name,500*8,500*3)
-        canv.Divide(4,2)
-
-    if initialContent is not None:
-        for ieta in range(1,9):
-            canv.cd(ieta)
-            initialContent[ieta].Draw(initialDrawOpt)
-    if secondaryContent is not None:
-        for ieta in range(1,9):
-            canv.cd(ieta)
-            secondaryContent[ieta].Draw("same%s"%secondaryDrawOpt)
-    canv.Update()
-    return canv
-
-def make3x8Canvas(name, initialContent = None, initialDrawOpt = '', secondaryContent = None, secondaryDrawOpt = '', canv = None ):
-    """
-    Creates a 3x8 canvas for summary plots.
-
-    name - TName of output TCanvas
-    initialContent - either None or an array of 24 (one per VFAT) TObjects that will be drawn on the canvas.
-    initialDrawOpt - draw option to be used when drawing elements of initialContent
-    secondaryContent - either None or an array of 24 (one per VFAT) TObjects that will be drawn on top of the canvas.
-    secondaryDrawOpt - draw option to be used when drawing elements of secondaryContent
-    canv - TCanvas previously produced by make3x8Canvas() or one that has been subdivided into a 3x8 grid
-    """
-
-    import ROOT as r
-    from ..mapping.chamberInfo import chamber_vfatPos2PadIdx
-   
-    if canv is None:
-        canv = r.TCanvas(name,name,500*8,500*3)
-        canv.Divide(8,3)
-
-    if initialContent is not None:
-        for vfat in range(24):
-            canv.cd(chamber_vfatPos2PadIdx[vfat])
-            try:
-                initialContent[vfat].Draw(initialDrawOpt)
-            except KeyError as err:
-                continue
-    if secondaryContent is not None:
-        for vfat in range(24):
-            canv.cd(chamber_vfatPos2PadIdx[vfat])
-            try:
-                secondaryContent[vfat].Draw("same%s"%secondaryDrawOpt)
-            except KeyError as err:
-                continue
-    canv.Update()
-    return canv
 
 def makeListOfScanDatesFile(chamberName, anaType, startDate=None, endDate=None, delim='\t', ztrim=4):
     """
@@ -1357,7 +1301,7 @@ def makeListOfScanDatesFile(chamberName, anaType, startDate=None, endDate=None, 
 
     return
 
-def parseCalFile(filename=None):
+def parseCalFile(filename=None, gemType="ge11"):
     """
     Gives the conversion between VCal/CFG_CAL_DAC to fC from either
     an optional external file (filename) or the hard coded vfat2 
@@ -1392,8 +1336,9 @@ def parseCalFile(filename=None):
     import ROOT as r
 
     # Set the CAL DAC to fC conversion
-    calDAC2Q_b = np.zeros(24)
-    calDAC2Q_m = np.zeros(24)
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    calDAC2Q_b = np.zeros(vfatsPerGemVariant[gemType])
+    calDAC2Q_m = np.zeros(vfatsPerGemVariant[gemType])
     if filename is not None:
         list_bNames = ["vfatN","slope","intercept"]
         calTree = r.TTree('calTree','Tree holding VFAT Calibration Info')
@@ -1405,13 +1350,13 @@ def parseCalFile(filename=None):
             calDAC2Q_m[dataPt['vfatN']] = dataPt['slope']
             pass
     else:
-        calDAC2Q_b = -0.8 * np.ones(24)
-        calDAC2Q_m = 0.05 * np.ones(24)
+        calDAC2Q_b = -0.8 * np.ones(vfatsPerGemVariant[gemType])
+        calDAC2Q_m = 0.05 * np.ones(vfatsPerGemVariant[gemType])
         pass
 
     return (calDAC2Q_m, calDAC2Q_b)
 
-def parseArmDacCalFile(filename):
+def parseArmDacCalFile(filename, gemType="ge11"):
     """
     Reads a text file and supplies the coefficients of the 
     quartic polynomial used for used for converting between 
@@ -1435,13 +1380,15 @@ def parseArmDacCalFile(filename):
     import numpy as np
     import root_numpy as rp #note need root_numpy-4.7.2 (may need to run 'pip install root_numpy --upgrade')
     import ROOT as r
+    from gempython.tools.hw_constants import vfatsPerGemVariant
 
+    
     # Set the CAL DAC to fC conversion
-    coef4 = np.zeros(24)
-    coef3 = np.zeros(24)
-    coef2 = np.zeros(24)
-    coef1 = np.zeros(24)
-    coef0 = np.zeros(24)
+    coef4 = np.zeros(vfatsPerGemVariant[gemType])
+    coef3 = np.zeros(vfatsPerGemVariant[gemType])
+    coef2 = np.zeros(vfatsPerGemVariant[gemType])
+    coef1 = np.zeros(vfatsPerGemVariant[gemType])
+    coef0 = np.zeros(vfatsPerGemVariant[gemType])
     list_bNames = ["vfatN","coef4","coef3","coef2","coef1","coef0"]
     calTree = r.TTree('calTree','Tree holding VFAT Calibration Info')
     try:
@@ -1567,7 +1514,8 @@ def rejectOutliersMADOneSided(arrayData, thresh=3.5, rejectHighTail=True):
     arrayOutliers = isOutlierMADOneSided(arrayData, thresh, rejectHighTail)
     return arrayData[arrayOutliers != True]
 
-def saveSummary(dictSummary, dictSummaryPanPin2=None, name='Summary', trimPt=None, drawOpt="colz"):
+  
+def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimPt=None, drawOpt="colz", gemType="ge11", write2Disk=False):
     """
     Makes an image with summary canvases drawn on it
 
@@ -1579,17 +1527,28 @@ def saveSummary(dictSummary, dictSummaryPanPin2=None, name='Summary', trimPt=Non
     trimPt             - Optional, list of trim points the dependent variable was aligned
                          to if it is the result of trimming.  One entry per VFAT
     drawOpt            - Draw option
+    write2Disk         - Option to save canvas with the name as the variable
     """
 
     import ROOT as r
-    from ..mapping.chamberInfo import chamber_vfatPos2PadIdx
+    from ..mapping.chamberInfo import chamber_vfatPos2PadIdx, chamber_maxiEtaiPhiPair
+    from gempython.tools.hw_constants import vfatsPerGemVariant
 
     legend = r.TLegend(0.75,0.7,0.88,0.88)
     r.gStyle.SetOptStat(0)
-    if dictSummaryPanPin2 is None:
-        canv = make3x8Canvas('canv', dictSummary, drawOpt)
-        for vfat in range(0,24):
-            canv.cd(chamber_vfatPos2PadIdx[vfat])
+
+    maxiEtaiPhiPair=chamber_maxiEtaiPhiPair[gemType]
+    
+    canv = r.TCanvas('canv', 'canv', 500 * maxiEtaiPhiPair[0], 500 * maxiEtaiPhiPair[1])
+    
+    if dictSummary is not None and dictSummaryPanPin2 is None:
+        canv.Divide(maxiEtaiPhiPair[0], maxiEtaiPhiPair[1])
+        for vfat, padIdx in chamber_vfatPos2PadIdx[gemType].iteritems():
+            canv.cd(padIdx)
+            try:
+                dictSummary[vfat].Draw(drawOpt)
+            except KeyError as err:
+                continue
             if trimPt is not None and trimLine is not None:
                 trimLine = r.TLine(-0.5, trimVcal[vfat], 127.5, trimVcal[vfat])
                 legend.Clear()
@@ -1599,62 +1558,93 @@ def saveSummary(dictSummary, dictSummaryPanPin2=None, name='Summary', trimPt=Non
                 trimLine.SetLineWidth(3)
                 trimLine.Draw('SAME')
                 pass
+            
+    elif dictSummary is not None and dictSummaryPanPin2 is not None:
+        # possibly remove unless fixed, or at the very least needs to be improved!!
+        canv.Divide(maxiEtaiPhiPair[0], 2*maxiEtaiPhiPair[1])
+        shift = maxiEtaiPhiPair[0]*(maxiEtaiPhiPair[1]+4) + 1
+        for vfat in range(0, vfatsPerGemVariant[gemType]):
+            if vfat % niEta == 0:
+                shift -= niEta*3
+            canv.cd(vfat+shift)
+            dictSummary[vfat].Draw(drawOpt)
+            canv.Update()
+            canv.cd(vfat+shift+maxiEtaiPhiPair[0])
+            dictSummaryPanPin2[vfat].Draw(drawOpt)
             canv.Update()
             pass
         pass
-    else:
-        canv = r.TCanvas('canv','canv',500*8,500*3)
-        canv.Divide(8,6)
-        r.gStyle.SetOptStat(0)
-        for ieta in range(0,8):
-            for iphi in range (0,3):
-                r.gStyle.SetOptStat(0)
-                canv.cd((ieta+1 + iphi*16)%48 + 16)
-                dictSummary[ieta+(8*iphi)].Draw(drawOpt)
-                canv.Update()
-                canv.cd((ieta+9 + iphi*16)%48 + 16)
-                dictSummaryPanPin2[ieta+(8*iphi)].Draw(drawOpt)
-                canv.Update()
-                pass
-            pass
-        pass
+    
+    canv.Update()
+    
+    if write2Disk:
+        canv.SaveAs(name)        
 
-    canv.SaveAs(name)
+    return canv
 
-    return
-
-def saveSummaryByiEta(dictSummary, name='Summary', trimPt=None, drawOpt="colz"):
+def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType="ge11", write2Disk=False):
     """
     Makes an image with summary canvases drawn on it
 
     dictSummary        - dict of TObjects to be drawn, one per ieta.  Each will be 
                          drawn on a separate pad
     name               - Name of output image
-    trimPt             - Optional, list of trim points the dependent variable was aligned
-                         to if it is the result of trimming.  One entry per VFAT
     drawOpt            - Draw option
+    write2Disk         - Option to save canvas with the name as the variable "name"
     """
 
     import ROOT as r
+    from ..mapping.chamberInfo import chamber_vfatPos2PadIdx, chamber_maxiEtaiPhiPair
+    from gempython.tools.hw_constants import vfatsPerGemVariant
 
     legend = r.TLegend(0.75,0.7,0.88,0.88)
     r.gStyle.SetOptStat(0)
-    canv = make2x4Canvas(name='canv', initialContent=dictSummary, initialDrawOpt=drawOpt)
-    for ieta in range(0,8):
-        canv.cd(ieta+1)
-        if trimPt is not None and trimLine is not None:
-            trimLine = r.TLine(-0.5, trimVcal[ieta], 127.5, trimVcal[ieta])
-            legend.Clear()
-            legend.AddEntry(trimLine, 'trimVCal is %f'%(trimVcal[vfat]))
-            legend.Draw('SAME')
-            trimLine.SetLineColor(1)
-            trimLine.SetLineWidth(3)
-            trimLine.Draw('SAME')
-            pass
-        canv.Update()
-        pass
+    
+    maxiEta = chamber_maxiEtaiPhiPair[gemType][0]
+    xyPair = (4,maxiEta//4) 
+    
+    canv = r.TCanvas('canv', 'canv', 500 * xyPair[0], 500 * xyPair[1])
+    canv.Divide(xyPair[0], xyPair[1])
 
-    canv.SaveAs(name)
+    if dictSummary is not None:
+        for index in range(maxiEta):
+            canv.cd(index+1)
+            try:
+                dictSummary[index].Draw(drawOpt)
+            except KeyError as err:
+                continue
+                                                                                
+    canv.Update()
 
-    return
+    if write2Disk:
+        canv.SaveAs(name)
+
+    return canv
+
+
+
+
+def addPlotToCanvas(canv=None, content = None, drawOpt = '', gemType="gem11"):
+    """
+    Creates a A by B sized canvas for summary plots.
+    
+    canv - TCanvas previously produced by make3x8Canvas() or one that has been subdivided into a 3x8 grid
+    content - either None or an array of 24 (one per VFAT) TObjects that will be drawn on the canvas.
+    drawOpt - draw option to be used when drawing elements of initialContent
+     
+    """
+
+    import ROOT as r
+    from ..mapping.chamberInfo import chamber_vfatPos2PadIdx
+    
+    
+    for index, padIdx in chamber_vfatPos2PadIdx[gemType].iteritems():
+        canv.cd(padIdx)
+        try:
+            content[index].Draw(drawOpt)
+        except KeyError as err:
+            continue
+
+    canv.Update()
+    return canv
 

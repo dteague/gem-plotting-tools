@@ -38,8 +38,8 @@ class DeadChannelFinder(object):
             ``[vfat][channel]``. Each entry is ``True`` if the channel is
             dead, ``False`` otherwise.
     """
-    def __init__(self):
-        self.isDead = [ np.ones(128, dtype=bool) for i in range(24) ]
+    def __init__(self, nVFats=24):
+        self.isDead = [ np.ones(128, dtype=bool) for i in range(nVFats) ]
 
     def feed(self, event):
         """
@@ -130,8 +130,8 @@ class ScanDataFitter(DeadChannelFinder):
         isVFAT3 (bool): Whether the detector under consideration uses VFAT3
     """
 
-    def __init__(self, calDAC2Q_m=None, calDAC2Q_b=None, isVFAT3=False):
-        super(ScanDataFitter, self).__init__()
+    def __init__(self, calDAC2Q_m=None, calDAC2Q_b=None, isVFAT3=False, nVFats=24):
+        super(ScanDataFitter, self).__init__(nVFats)
 
         from gempython.utils.nesteddict import nesteddict as ndict
         r.gStyle.SetOptStat(0)
@@ -144,16 +144,17 @@ class ScanDataFitter(DeadChannelFinder):
         self.scanFitResults   = ndict()
 
         self.isVFAT3    = isVFAT3
-
-        self.calDAC2Q_m = np.ones(24)
+        self.nVFats     = nVFats
+        
+        self.calDAC2Q_m = np.ones(self.nVFats)
         if calDAC2Q_m is not None:
             self.calDAC2Q_m = calDAC2Q_m
 
-        self.calDAC2Q_b = np.zeros(24)
+        self.calDAC2Q_b = np.zeros(self.nVFats)
         if calDAC2Q_b is not None:
             self.calDAC2Q_b = calDAC2Q_b
 
-        for vfat in range(0,24):
+        for vfat in range(0,self.nVFats):
             self.scanFitResults[0][vfat] = np.zeros(128)
             self.scanFitResults[1][vfat] = np.zeros(128)
             self.scanFitResults[2][vfat] = np.zeros(128)
@@ -178,7 +179,7 @@ class ScanDataFitter(DeadChannelFinder):
                 pass
             pass
 
-        self.fitValid = [ np.zeros(128, dtype=bool) for vfat in range(24) ]
+        self.fitValid = [ np.zeros(128, dtype=bool) for vfat in range(self.nVFats) ]
 
         return
 
@@ -246,7 +247,7 @@ class ScanDataFitter(DeadChannelFinder):
 
         random = r.TRandom3()
         random.SetSeed(0)
-        for vfat in range(0,24):
+        for vfat in range(0,self.nVFats):
             if self.isVFAT3:
                 fitTF1 = r.TF1('myERF','[3]*TMath::Erf((TMath::Max([2],x)-[0])/(TMath::Sqrt(2)*[1]))+[3]',
                             self.calDAC2Q_m[vfat]*253+self.calDAC2Q_b[vfat],self.calDAC2Q_m[vfat]*1+self.calDAC2Q_b[vfat])
@@ -407,7 +408,7 @@ class ScanDataFitter(DeadChannelFinder):
             self.feed(event)
         return
 
-def fitScanData(treeFileName, isVFAT3=False, calFileName=None, calTuple=None):
+def fitScanData(treeFileName, isVFAT3=False, calFileName=None, calTuple=None, gemType="ge11"):
     """
     Helper function to fit scan data. Creates a :py:class:`ScanDataFitter`,
     loads the data and returns the results of :py:meth:`ScanDataFitter.fit`.
@@ -424,20 +425,24 @@ def fitScanData(treeFileName, isVFAT3=False, calFileName=None, calTuple=None):
         format of the calibration file.
     """
     from gempython.gemplotting.utils.anautilities import parseCalFile
-    
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+
+    nVFATS = vfatsPerGemVariant[gemType]
     # Get the fitter
     if calFileName is not None:
         tuple_calInfo = parseCalFile(calFileName)
         fitter = ScanDataFitter(
                 calDAC2Q_m = tuple_calInfo[0],
                 calDAC2Q_b = tuple_calInfo[1],
-                isVFAT3=isVFAT3
+                isVFAT3=isVFAT3,
+                nVFATS=nVFATS
                 )
     elif calTuple is not None:
         fitter = ScanDataFitter(
                 calDAC2Q_m = calTuple[0],
                 calDAC2Q_b = calTuple[1],
-                isVFAT3=isVFAT3
+                isVFAT3=isVFAT3,
+                nVFATS=nVFATS
                 )
     else:
         fitter = ScanDataFitter(isVFAT3=isVFAT3)

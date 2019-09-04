@@ -29,6 +29,8 @@ if __name__ == '__main__':
     outF = r.TFile(filename+'/'+outfilename, 'recreate')
     inF = r.TFile(filename+'.root')
 
+    gemType = "ge11"
+    
     # Determine the rates scanned
     print('Determining rates tested')
     import numpy as np
@@ -58,6 +60,8 @@ if __name__ == '__main__':
     dict_h_sbitObsVsChanPulsed = ndict() #Keys as: [isValid][calEnable][rate][vfat]
     dict_h_sbitMultiVsSbitSize = ndict() #Keys as: [isValid][calEnable][rate][vfat]
 
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    
     rateMap = {}
     from gempython.gemplotting.utils.anautilities import formatSciNotation
     for isValid in isValidValues:
@@ -88,10 +92,10 @@ if __name__ == '__main__':
                 dict_h_vfatObsVsVfatPulsed[isValid][calEnable][rate] = r.TH2F(
                         "h_vfatObservedVsVfatPulsed_{0}_{1}Hz".format(postScript,int(rate)),
                         "Summmary - Rate {0} Hz;VFAT {1};VFAT Observed".format(int(rate),strPulsedOrUnmasked),
-                        24,-0.5,23.5,24,-0.5,23.5)
+                        vfatsPerGemVariant[gemType],-0.5,vfatsPerGemVariant[gemType]-0.5, vfatsPerGemVariant[gemType],-0.5,vfatsPerGemVariant[gemType]-0.5)
                 dict_h_vfatObsVsVfatPulsed[isValid][calEnable][rate].Sumw2()
 
-            for vfat in range(0,24):
+            for vfat in range(0, vfatsPerGemVariant[gemType]):
                 dict_h_chanVsRatePulsed_ZRateObs[isValid][calEnable][vfat] = r.TH2F(
                         "h_chanVsRatePulsed_ZRateObs_vfat{0}_{1}".format(vfat,postScript),
                         "VFAT{0};Rate #left(Hz#right);Channel",
@@ -277,7 +281,7 @@ if __name__ == '__main__':
         
         for calEnable in calEnableValues:
             for rate in ratesUsed:
-                for vfat in range(0,24):
+                for vfat in range(0, vfatsPerGemVariant[gemType]):
                     for event,multi in dict_validSbitsPerEvt[isValid][calEnable][rate][vfat].iteritems():
                         dict_h_sbitMulti[isValid][calEnable][rate][vfat].Fill(multi)
 
@@ -285,7 +289,7 @@ if __name__ == '__main__':
                             dict_h_sbitMultiVsSbitSize[isValid][calEnable][rate][vfat].Fill(size,multi)
     
     print("Making summary plots")
-    from gempython.gemplotting.utils.anautilities import make3x8Canvas, saveSummary
+    from gempython.gemplotting.utils.anautilities import make3x8Canvas, getSummary
     for isValid in isValidValues:
         if not isValid and not args.checkInvalid:
             continue
@@ -330,11 +334,11 @@ if __name__ == '__main__':
         rateCanvas.SaveAs("{0}/rateObservedVsRatePulsed_{1}.png".format(filename,strValidity))
 
         # CalDisable rate 0 case
-        saveSummary(dict_h_sbitMulti[isValid][0][0], name="{0}/sbitMulti_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="")
-        saveSummary(dict_h_sbitSize[isValid][0][0], name="{0}/sbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="")
+        getSummary(dict_h_sbitMulti[isValid][0][0], name="{0}/sbitMulti_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+        getSummary(dict_h_sbitSize[isValid][0][0], name="{0}/sbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
 
-        saveSummary(dict_h_sbitObsVsChanPulsed[isValid][0][0], name="{0}/sbitObsVsChanUnmasked_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ")
-        saveSummary(dict_h_sbitMultiVsSbitSize[isValid][0][0], name="{0}/sbitMultiVsSbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ")
+        getSummary(dict_h_sbitObsVsChanPulsed[isValid][0][0], name="{0}/sbitObsVsChanUnmasked_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+        getSummary(dict_h_sbitMultiVsSbitSize[isValid][0][0], name="{0}/sbitMultiVsSbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
         
         for idx,rate in enumerate(ratesUsed):
             # Sum over all rates
@@ -347,8 +351,8 @@ if __name__ == '__main__':
                 else:
                     dict_h_vfatObsVsVfatPulsed[isValid][1][-1].Add(dict_h_vfatObsVsVfatPulsed[isValid][1][rate])
 
-                cloneExists = { vfat:False for vfat in range(0,24) }
-                for vfat in range(0,24):
+                cloneExists = { vfat:False for vfat in range(0, vfatsPerGemVariant[gemType]) }
+                for vfat in range(0, vfatsPerGemVariant[gemType]):
                     if ( not cloneExists[vfat] ):
                         cloneExists[vfat] = True
 
@@ -377,15 +381,15 @@ if __name__ == '__main__':
                         dict_h_sbitObsVsChanPulsed[isValid][1][-1][vfat].Add(dict_h_sbitObsVsChanPulsed[isValid][1][rate][vfat])
                         dict_h_sbitMultiVsSbitSize[isValid][1][-1][vfat].Add(dict_h_sbitMultiVsSbitSize[isValid][1][rate][vfat])
         
-                saveSummary(dict_h_sbitMulti[isValid][1][-1], name="{0}/sbitMulti_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="")
-                saveSummary(dict_h_sbitSize[isValid][1][-1], name="{0}/sbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="")
+                getSummary(dict_h_sbitMulti[isValid][1][-1], name="{0}/sbitMulti_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+                getSummary(dict_h_sbitSize[isValid][1][-1], name="{0}/sbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
 
-                saveSummary(dict_h_sbitObsVsChanPulsed[isValid][1][-1], name="{0}/sbitObsVsChanPulsed_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ")
-                saveSummary(dict_h_sbitMultiVsSbitSize[isValid][1][-1], name="{0}/sbitMultiVsSbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ")
+                getSummary(dict_h_sbitObsVsChanPulsed[isValid][1][-1], name="{0}/sbitObsVsChanPulsed_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+                getSummary(dict_h_sbitMultiVsSbitSize[isValid][1][-1], name="{0}/sbitMultiVsSbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
 
     print("Storing TObjects in output TFile")
     # Per VFAT Plots
-    for vfat in range(0,24):
+    for vfat in range(0, vfatsPerGemVariant[gemType]):
         dirVFAT = outF.mkdir("VFAT{0}".format(vfat))
 
         for isValid in isValidValues:
