@@ -75,7 +75,7 @@ def compareSBitThreshResults(args):
     elogPath = os.getenv('ELOG_PATH')
 
     # Get info from input file
-    from gempython.gemplotting.utils.anautilities import getCyclicColor, getDirByAnaType, filePathExists, make3x8Canvas, parseArmDacCalFile, parseListOfScanDatesFile
+    from gempython.gemplotting.utils.anautilities import getCyclicColor, getDirByAnaType, filePathExists, getSummaryCanvas, parseArmDacCalFile, parseListOfScanDatesFile
     parsedTuple = parseListOfScanDatesFile(args.filename,alphaLabels=args.alphaLabels)
     listChamberAndScanDate = parsedTuple[0]
     chamberName = listChamberAndScanDate[0][0]
@@ -203,7 +203,7 @@ def compareSBitThreshResults(args):
         pass
 
     # Make summary canvases, always save these
-    canvSBitRate_Summary = make3x8Canvas("canvSBitRate_Summary",dict_MultiGraphs.values()[0:24],"APE1")
+    canvSBitRate_Summary = getSummaryCanvas(dict_MultiGraphs.values()[0:24], name="canvSBitRate_Summary", drawOpt="APE1")
     for vfatCanv in range(1,25):
         canvSBitRate_Summary.cd(vfatCanv).SetLogy()
                 

@@ -276,7 +276,7 @@ class TimeSeriesData(object):
         maskReason: Data for the "maskReason" property,
     """
 
-    def __init__(self, inputDir):
+    def __init__(self, inputDir, gemType="ge11"):
         """Creates a TimeSeriesData object by reading the files located in the
         inputDir directory.
 
@@ -294,6 +294,8 @@ class TimeSeriesData(object):
         import ROOT as r
         from root_numpy import hist2array
 
+        self.gemType = gemType
+        
         file_mask = r.TFile('%s/gemPlotterOutput_mask_vs_scandate.root' % inputDir, 'READ')
         if file_mask.IsZombie():
             raise IOError('Could not open %s. Is %s the output directory of plotTimeSeries.py?' % (
@@ -320,12 +322,14 @@ class TimeSeriesData(object):
             raise RuntimeError(
                 'No key VFAT0/h_<MODE>_vs_scandate_Obsmask_VFAT0 in file %s\nTried MODE=%s. Was the file produced by plotTimeSeries.py?' % (
                     file_mask.GetPath(), join(possibleModes, ',')))
-
+        
         self.mask = [] # [vfat][time][stripOrChan]; warning: reordered after loading
         self.maskReason = [] # [vfat][time][stripOrChan]; warning: reordered after loading
         self.noise = [] # [vfat][time][stripOrChan]; warning: reordered after loading
 
-        for vfat in range(0,24):
+        from gempython.tools.hw_constants import vfatsPerGemVariant
+        
+        for vfat in range(0,vfatsPerGemVariant[self.gemType]):
             hist_mask = file_mask.Get(
                 "VFAT{0:d}/h_ROBstr_vs_scandate_Obsmask_VFAT{0:d}".format(vfat))
             hist_maskReason = file_maskReason.Get(
@@ -366,8 +370,9 @@ class TimeSeriesData(object):
             maxMaskedStripOrChanFraction: The maximum fraction of masked
                 strips/channels for a scan to be kept.
         """
+        from gempython.tools.hw_constants import vfatsPerGemVariant
         badScans = _np.logical_or(_np.mean(self.noise, (0, 1)) < minAverageNoise,
-                                 _np.count_nonzero(self.mask, (0, 1)) / 24. / 128 > maxMaskedStripOrChanFraction)
+                                 _np.count_nonzero(self.mask, (0, 1)) / vfatsPerGemVariant[gemType] / 128 > maxMaskedStripOrChanFraction)
         self.dates = self.dates[_np.logical_not(badScans)]
         self.mask = self.mask[:,:,_np.logical_not(badScans)]
         self.maskReason = self.maskReason[:,:,_np.logical_not(badScans)]

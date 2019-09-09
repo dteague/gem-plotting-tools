@@ -126,8 +126,8 @@ if __name__ == '__main__':
     r.gStyle.SetOptStat(1111111)
 
     # Loading the dictionary with the mapping
-    from gempython.gemplotting.utils.anautilities import make3x8Canvas, getSummaryByiEta, getMapping
-    vfat_ch_strips = getMapping(mapping, isVFAT2=False, gemType)
+    from gempython.gemplotting.utils.anautilities import getSummaryCanvas, getSummaryCanvasByiEta, getMapping
+    vfat_ch_strips = getMapping(mapping, isVFAT2=False, gemType=gemType)
 
     if args.debug:
         print("\nVFAT channels to strips \n"+mapping+"\nMAP loaded")
@@ -392,13 +392,13 @@ if __name__ == '__main__':
     canv.SaveAs(filename+'/L1A_DelaySummary.png')
 
     # getSummaryByiEta
-    getSummaryByiEta(ieta_h_strip, name='%s/ietaStripSummary.png' %
+    getSummaryCanvasByiEta(ieta_h_strip, name='%s/ietaStripSummary.png' %
                       filename, trimPt=None, drawOpt="", write2Disk=True)
-    getSummaryByiEta(ieta_h_ch, name='%s/ietaChanSummary.png' %
+    getSummaryCanvasByiEta(ieta_h_ch, name='%s/ietaChanSummary.png' %
                       filename, trimPt=None, drawOpt="", write2Disk=True)
-    getSummaryByiEta(ieta_h_sbitSize, name='%s/ietaSbitSizeSummary.png' %
+    getSummaryCanvasByiEta(ieta_h_sbitSize, name='%s/ietaSbitSizeSummary.png' %
                       filename, trimPt=None, drawOpt="", write2Disk=True)
-    getSummaryByiEta(ieta_h_delay, name='%s/ietaDelaySummary.png' %
+    getSummaryCanvasByiEta(ieta_h_delay, name='%s/ietaDelaySummary.png' %
                       filename, trimPt=None, drawOpt="", write2Disk=True)
 
     # Making&Filling folders in the TFile

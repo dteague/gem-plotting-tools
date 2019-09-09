@@ -303,7 +303,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         canv_Summary = addPlotToCanvas(canv_Summary, dict_fitNHitsVFAT_Noise, gemType)
         canv_Summary.SaveAs(outputDir+'/Summary.png')
     else:
-        canv_Summary = getSummaryCanvas(dict_grNHitsVFAT, name='canv_Summary', drawOpt='APE1', gemType)
+        canv_Summary = getSummaryCanvas(dict_grNHitsVFAT, name='canv_Summary', drawOpt='APE1', gemType=gemType)
         canv_Summary.SaveAs(outputDir+'/Summary.png')
 
     # Store - Sig Over Bkg

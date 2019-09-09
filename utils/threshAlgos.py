@@ -70,8 +70,6 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         args.zscore = 3.5
         pass
 
-    gemType = "ge11"
-    
     # Determine output filepath
     if outputDir is None:
         from gempython.gemplotting.utils.anautilities import getElogPath
@@ -133,6 +131,9 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     # Get chip ID's
     import numpy as np
     import root_numpy as rp
+    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
+    gemType = gemTypeMapping[rp.tree2array(thrTree, branches =[ 'gemType' ] )[0][0]]
+    
     from gempython.tools.hw_constants import vfatsPerGemVariant
     listOfBranches = thrTree.GetListOfBranches()
     if 'vfatID' in listOfBranches:
@@ -1254,6 +1255,9 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
     if "detName" in crateMap.dtype.names:
         for entry in crateMap:
             detNamesMap[(entry['shelf'],entry['slot'],entry['link'])] = entry['detName'][0]
+
+    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
+    gemType = gemTypeMapping[rp.tree2array(rateTree, branches =[ 'gemType' ] )[0][0]]
     
     # get nonzero VFATs
     dict_nonzeroVFATs = {}
