@@ -8,7 +8,7 @@ summary\_plots
 if __name__ == '__main__':
     import os
 
-    from gempython.gemplotting.utils.anautilities import saveSummary
+    from gempython.gemplotting.utils.anautilities import getSummaryCanvas
     from gempython.utils.nesteddict import nesteddict as ndict
     from gempython.gemplotting.macros.plotoptions import parser
 
@@ -35,7 +35,10 @@ if __name__ == '__main__':
     vNoiseTrim  = ndict()
     vPedestal   = ndict()
 
-    for vfat in range(0,24):
+    gemType = "ge11"
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    
+    for vfat in range(0,vfatsPerGemVariant[gemType]):
         vNoise[vfat] = r.TH1D('Noise%i'%vfat,'Noise%i;Noise [DAC units]'%vfat,35,-0.5,34.5)
         vPedestal[vfat] = r.TH1D('Pedestal%i'%vfat,'Pedestal%i;Pedestal [DAC units]'%vfat,256,-0.5,255.5)
         vThreshold[vfat] = r.TH1D('Threshold%i'%vfat,'Threshold%i;Threshold [DAC units]'%vfat,60,-0.5,299.5)
@@ -61,13 +64,13 @@ if __name__ == '__main__':
 
     if options.fit_plots or options.all_plots:
         r.gStyle.SetOptStat(111100)
-        saveSummary(dictSummary=vComparison, name=("%s_FitSummary.png"%filename),drawOpt="colz")
-        saveSummary(dictSummary=vNoiseTrim, name=("%s_TrimNoiseSummary.png"%filename),drawOpt="colz")
-        saveSummary(dictSummary=vThreshold, name=("%s_FitThreshSummary.png"%filename),drawOpt="")
-        saveSummary(dictSummary=vPedestal, name=("%s_FitPedestalSummary.png"%filename),drawOpt="")
-        saveSummary(dictSummary=vNoise, name=("%s_FitNoiseSummary.png"%filename),drawOpt="")
+        getSummmaryCanvas(dictSummary=vComparison, name=("%s_FitSummary.png"%filename),drawOpt="colz", write2Disk=True)
+        getSummmaryCanvas(dictSummary=vNoiseTrim, name=("%s_TrimNoiseSummary.png"%filename),drawOpt="colz", write2Disk=True)
+        getSummmaryCanvas(dictSummary=vThreshold, name=("%s_FitThreshSummary.png"%filename),drawOpt="", write2Disk=True)
+        getSummmaryCanvas(dictSummary=vPedestal, name=("%s_FitPedestalSummary.png"%filename),drawOpt="", write2Disk=True)
+        getSummmaryCanvas(dictSummary=vNoise, name=("%s_FitNoiseSummary.png"%filename),drawOpt="", write2Disk=True)
         pass
 
     if options.chi2_plots or options.all_plots:
-        saveSummary(dictSummary=vChi2, name=("%s_FitChi2Summary.png"%filename),drawOpt="")
+        getSummmaryCanvas(dictSummary=vChi2, name=("%s_FitChi2Summary.png"%filename),drawOpt="", write2Disk=True)
         pass

@@ -142,7 +142,7 @@ if __name__ == '__main__':
                         rateMap[rate]=binX+1 # Used later to translate rate to bin position
                     dict_h_chanVsRatePulsed_ZRateObs[isValid][calEnable][vfat].GetXaxis().SetBinLabel(binX+1,formatSciNotation(str(rate)))
 
-                    # VFAT level
+                    # VFAT levpel
                     if (calEnable or (not calEnable and rate == 0.0)):
                         # 1D Obs
                         dict_h_sbitMulti[isValid][calEnable][rate][vfat] = r.TH1F(
@@ -289,7 +289,7 @@ if __name__ == '__main__':
                             dict_h_sbitMultiVsSbitSize[isValid][calEnable][rate][vfat].Fill(size,multi)
     
     print("Making summary plots")
-    from gempython.gemplotting.utils.anautilities import make3x8Canvas, getSummary
+    from gempython.gemplotting.utils.anautilities import addPlotToCanvas, getSummaryCanvas
     for isValid in isValidValues:
         if not isValid and not args.checkInvalid:
             continue
@@ -300,17 +300,11 @@ if __name__ == '__main__':
             strValidity="invalidSbits"
 
         # All Rates
-        rateCanvas = make3x8Canvas(
-                name="rateObservedVsRatePulsed_{0}".format(strValidity),
-                initialContent=dict_g_rateObsCTP7VsRatePulsed[isValid],
-                initialDrawOpt="APE1",
-                secondaryContent=dict_g_rateObsFPGAVsRatePulsed[isValid],
-                secondaryDrawOpt="PE1")
-        rateCanvas = make3x8Canvas(
-                name="",
-                secondaryContent=dict_g_rateObsVFATVsRatePulsed[isValid],
-                secondaryDrawOpt="PE1",
-                canv=rateCanvas)
+        rateCanvas = getSummaryCanvas(dict_g_rateObsCTP7VsRatePulsed[isValid],
+                                      name="rateObservedVsRatePulsed_{0}".format(strValidity),
+                                      drawOpt="APE1")
+        rateCanvas = addPlotToCanvas(rateCanvas, dict_g_rateObsFPGAVsRatePulsed[isValid], drawOpt="PE1")
+        rateCanvas = addPlotToCanvas(rateCanvas, dict_g_rateObsVFATVsRatePulsed[isValid], drawOpt="PE1")
         
         # Make the legend
         rateLeg = r.TLegend(0.5,0.5,0.9,0.9)
@@ -334,11 +328,11 @@ if __name__ == '__main__':
         rateCanvas.SaveAs("{0}/rateObservedVsRatePulsed_{1}.png".format(filename,strValidity))
 
         # CalDisable rate 0 case
-        getSummary(dict_h_sbitMulti[isValid][0][0], name="{0}/sbitMulti_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
-        getSummary(dict_h_sbitSize[isValid][0][0], name="{0}/sbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+        getSummaryCanvas(dict_h_sbitMulti[isValid][0][0], name="{0}/sbitMulti_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+        getSummaryCanvas(dict_h_sbitSize[isValid][0][0], name="{0}/sbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
 
-        getSummary(dict_h_sbitObsVsChanPulsed[isValid][0][0], name="{0}/sbitObsVsChanUnmasked_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
-        getSummary(dict_h_sbitMultiVsSbitSize[isValid][0][0], name="{0}/sbitMultiVsSbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+        getSummaryCanvas(dict_h_sbitObsVsChanPulsed[isValid][0][0], name="{0}/sbitObsVsChanUnmasked_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+        getSummaryCanvas(dict_h_sbitMultiVsSbitSize[isValid][0][0], name="{0}/sbitMultiVsSbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
         
         for idx,rate in enumerate(ratesUsed):
             # Sum over all rates
@@ -381,11 +375,11 @@ if __name__ == '__main__':
                         dict_h_sbitObsVsChanPulsed[isValid][1][-1][vfat].Add(dict_h_sbitObsVsChanPulsed[isValid][1][rate][vfat])
                         dict_h_sbitMultiVsSbitSize[isValid][1][-1][vfat].Add(dict_h_sbitMultiVsSbitSize[isValid][1][rate][vfat])
         
-                getSummary(dict_h_sbitMulti[isValid][1][-1], name="{0}/sbitMulti_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
-                getSummary(dict_h_sbitSize[isValid][1][-1], name="{0}/sbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+                getSummaryCanvas(dict_h_sbitMulti[isValid][1][-1], name="{0}/sbitMulti_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+                getSummaryCanvas(dict_h_sbitSize[isValid][1][-1], name="{0}/sbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
 
-                getSummary(dict_h_sbitObsVsChanPulsed[isValid][1][-1], name="{0}/sbitObsVsChanPulsed_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
-                getSummary(dict_h_sbitMultiVsSbitSize[isValid][1][-1], name="{0}/sbitMultiVsSbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+                getSummaryCanvas(dict_h_sbitObsVsChanPulsed[isValid][1][-1], name="{0}/sbitObsVsChanPulsed_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+                getSummaryCanvas(dict_h_sbitMultiVsSbitSize[isValid][1][-1], name="{0}/sbitMultiVsSbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
 
     print("Storing TObjects in output TFile")
     # Per VFAT Plots

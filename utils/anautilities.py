@@ -43,7 +43,7 @@ def cleanup(listOfFilePaths,listOfFileObjects=None,listOfTFiles=None,perm="g+rw"
 
     return
 
-def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemType="gem11"):
+def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
     """
     Analyzes DAC scan data to determine nominal bias current/voltage settings for a particular VFAT3 DAC.
     Returns a dictionary where:
@@ -92,7 +92,9 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
     # Get VFATID's
     vfatIDArray = getSubArray(vfatArray, ['vfatID','vfatN'])
     vfatIDArray = np.sort(vfatIDArray,order='vfatN')['vfatID'] # index now gauranteed to match vfatN
-    
+
+    gemType = "ge11"
+
     # make the crateMap
     list_bNames.remove('dacValY')
     list_bNames.remove('nameX')
@@ -111,7 +113,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
 
     dataPath = getDataPath()
     elogPath = getElogPath()
-    
+
     from gempython.utils.wrappers import runCommand
     for entry in crateMap:
         detName = getDetName(entry)
@@ -125,7 +127,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
                 runCommand(["unlink", "{0}/{1}/dacScans/current".format(dataPath,detName)])
                 runCommand(["ln","-s","{0}/{1}/dacScans/{2}".format(dataPath,detName,scandate),"{0}/{1}/dacScans/current".format(dataPath,detName)])
             pass
-            
+
     # Determine which DAC was scanned and against which ADC
     adcName = ""
     for event in dacScanTree:
@@ -167,7 +169,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
                 # Maybe a TypeError is more appropriate...?
                 raise ValueError(colormsg("Error: unexpected units: '%s'"%nominalDacValues[dacName][1],logging.ERROR), os.EX_DATAERR)
 
-    #the nominal reference current is 10 uA and it has a scaling factor of 0.5   
+    #the nominal reference current is 10 uA and it has a scaling factor of 0.5
     nominal_iref = 10*0.5
 
     calInfo = {}
@@ -195,7 +197,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
             if calAdcCalFileExists:
                 tuple_calInfo = parseCalFile(calAdcCalFile, gemType=gemType)
                 calInfo[ohKey] = {'slope' : tuple_calInfo[0], 'intercept' : tuple_calInfo[1]}
-            else:    
+            else:
                 # FIXME should perform a DB query with chipID's in input dacScanTree to get calibration constants
                 print("Skipping Shelf{0}, Slot{1}, OH{2}, detector {3}, missing {4} calibration file:\n\t{5}".format(
                     ohKey[0],
@@ -208,7 +210,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
 
     if len(crateMap) == 0:
         raise RuntimeError(colormsg('No OHs with a calFile, exiting.',logging.ERROR),os.EX_DATAERR)
-           
+
     # Initialize nested dictionaries
     from gempython.utils.nesteddict import nesteddict as ndict
     dict_DACvsADC_Graphs = ndict()
@@ -241,7 +243,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
                 dict_DACvsADC_Funcs[dacName][ohKey][vfat].SetLineWidth(1)
                 dict_DACvsADC_Funcs[dacName][ohKey][vfat].SetLineStyle(3)
 
-    outputFiles = {}         
+    outputFiles = {}
     for entry in crateMap:
         detName = getDetName(entry)
         if scandate == 'noscandate':
@@ -275,7 +277,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
             calibrated_ADC_error = calibrated_ADC_error/20.0
 
             if dacName != 'CFG_IREF':
-                calibrated_ADC_value -= nominal_iref 
+                calibrated_ADC_value -= nominal_iref
 
             calibrated_ADC_value /= nominalDacScalingFactors[dacName]
             calibrated_ADC_error /= nominalDacScalingFactors[dacName]
@@ -339,7 +341,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
                 #evaluate the fitted function at the nominal current or voltage value and convert to an integer
                 fittedDacValue = int(dict_DACvsADC_Funcs[dacName][ohKey][vfat].Eval(nominal[dacName]))
                 finalDacValue = max(0,min(maxDacValue,fittedDacValue))
-                
+
                 if fittedDacValue != finalDacValue:
                     dictOfDACsWithBadBias[(ohKey[0],ohKey[1],ohKey[2],vfat)] = (vfatIDArray[vfat],dacName)
                     errorMsg = "Warning: when fitting VFAT{5} of chamber {6} (Shelf{7},Slot{8},OH{4}) DAC {0} the fitted value, {1}, is outside range the register can hold: [0,{2}]. It will be replaced by {3}.".format(
@@ -353,7 +355,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
                             ohKey[0],
                             ohKey[1])
                     print(colormsg(errorMsg,logging.ERROR))
-                    
+
                 dict_dacVals[dacName][ohKey][vfat] = finalDacValue
                 graph_dacVals[dacName][ohKey].SetPoint(graph_dacVals[dacName][ohKey].GetN(),vfat,dict_dacVals[dacName][ohKey][vfat])
 
@@ -416,7 +418,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate', gemTyp
             detName = getDetName(entry)
             for idx in range(len(dacNameArray)):
                 dacName = np.asscalar(dacNameArray[idx])
-            
+
                 for vfat in range(0,vfatsPerGemVariant[gemType]):
                     if vfat not in dict_nonzeroVFATs[ohKey]:
                         continue
@@ -877,7 +879,7 @@ def getNumCores2Use(args):
 
     return int(usageFactor*availableCores)
 
-def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff,savePlots=True, gemType="ge11"): 
+def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff,savePlots=True): 
     """
     Plots GBT phase scan data as a TH2F and the GBT phase set points as a TGraph for
     each optohybrid found in the two input files.  Note it's assume that if OHX is in
@@ -1060,18 +1062,18 @@ def getScandateFromFilename(infilename):
     else:    
         return 'noscandate'
 
-def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,savePlots=True, gemType="ge11"):
+def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,savePlots=True):
     """
     As getPhaseScanPlots but for a single optohybrid, defined by ohN, inside the input files.
     Returns a tuple where elements are given by:
-    
+
         [0] - TH2F object with the phase scan data plotted
         [1] - TGraph object with the phase set points plotted
 
     Arguments are defined as:
 
     ohN             - Optohybrid number to make the plot for
-    phaseScanFile   - file storing phase scan results, expected format to be what is 
+    phaseScanFile   - file storing phase scan results, expected format to be what is
                       defined in xhal.reg_interface_gem.core.gbt_utils_extended function
                       saveGBTPhaseScanResults
     phaseSetPtsFile - file storing phase set points determined by testConnectivity.py
@@ -1080,18 +1082,18 @@ def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,sav
     """
 
     ohMask = (0x1 << ohN)
-    tuplePlotDicts = getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier,ohMask,False, gemType=gemType)
-    
+    tuplePlotDicts = getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier,ohMask,False)
+
     phaseScanDist   = tuplePlotDicts[0][ohN]
     phaseScanSetPts = tuplePlotDicts[1][ohN]
 
     if savePlots:
         from gempython.utils.wrappers import envCheck
         envCheck('ELOG_PATH')
-        
+
         import os
         elogPath  = os.getenv('ELOG_PATH')
-        
+
         if identifier is not None:
             name = "canv_GBTPhaseScanResults_{0}".format(identifier)
         else:
@@ -1612,13 +1614,12 @@ def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType=
     canv = r.TCanvas('canv', 'canv', 500 * xyPair[0], 500 * xyPair[1])
     canv.Divide(xyPair[0], xyPair[1])
 
-    if dictSummary is not None:
-        for index in range(maxiEta):
-            canv.cd(index+1)
-            try:
-                dictSummary[index].Draw(drawOpt)
-            except KeyError as err:
-                continue
+    for index in range(1,maxiEta+1):
+        canv.cd(index)
+        try:
+            dictSummary[index].Draw(drawOpt)
+        except KeyError as err:
+            continue
                                                                                 
     canv.Update()
 

@@ -526,10 +526,13 @@ if __name__ == '__main__':
     envCheck('ELOG_PATH')
     elogPath  = os.getenv('ELOG_PATH')
 
+    gemType="ge11"
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    
     # Get VFAT List
     listVFATs = []
     if options.all_plots:
-        listVFATs = (x for x in range(0,24))
+        listVFATs = (x for x in range(0,vfatsPerGemVariant[gemType]))
     elif options.vfatList != None:
         listVFATs = map(int, options.vfatList.split(','))
     elif options.vfat != None:
@@ -765,9 +768,9 @@ if __name__ == '__main__':
 
     # Make Summary Plot
     if options.all_plots:
-        from gempython.gemplotting.utils.anautilities import make3x8Canvas
+        from gempython.gemplotting.utils.anautilities import getSummaryCanvas
         strSummaryName = "summary_%s_vs_%s_%s"%(options.branchName, strIndepVarNoBraces,strStripOrChan)
-        canv_summary = make3x8Canvas( strSummaryName, listPlots, strDrawOpt)
+        canv_summary = getSummaryCanvas(listPlots, name=strSummaryName, drawOpt=strDrawOpt)
         
         strCanvName = "%s/%s.png"%(elogPath,strSummaryName)
         canv_summary.SaveAs(strCanvName)

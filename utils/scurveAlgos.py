@@ -172,7 +172,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             for vfat in range(vfatsPerGemVariant[gemType]):
                 if vfat not in dict_chipID:
                     dict_chipID[vfat] = -1
-        dbInfo = getVFAT3CalInfo(dict_chipID.values(), debug=args.debug, gemType)
+        dbInfo = getVFAT3CalInfo(dict_chipID.values(), debug=args.debug, gemType=gemType)
         calDAC2Q_Slope = dbInfo['cal_dacm']
         calDAC2Q_Intercept = dbInfo['cal_dacb']
     else:
@@ -878,7 +878,9 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         canvasBoxPlot_ENC.Update()
         canvasBoxPlot_ENC.SaveAs("%s/h2ScurveSigmaDist_All.png"%(outputDir))
         canvasBoxPlot_ENC.Close()
-    
+
+
+        
         getSummaryCanvasByiEta(threshSummaryPlotsByiEta, name='%s/ScurveMeanSummaryByiEta.png'%outputDir, drawOpt="AP", gemType=gemType, write2Disk=True)
         getSummaryCanvasByiEta(effPedSummaryPlotsByiEta, name='%s/ScurveEffPedSummaryByiEta.png'%outputDir, drawOpt="E1", gemType=gemType, write2Disk=True)
         getSummaryCanvasByiEta(encSummaryPlotsByiEta, name='%s/ScurveSigmaSummaryByiEta.png'%outputDir, drawOpt="AP", gemType=gemType, write2Disk=True)
