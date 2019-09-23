@@ -466,12 +466,12 @@ if __name__ == '__main__':
         pass
 
     # Draw multigraphs for summary cases
-    canvFitSum_Grid = getSummaryCanvas(dict_mGraph_fitSum, name="scurveFitSummaryGridAllScandates", drawOpt="APE1")
-    canvScurveMean_Grid = getSummaryCanvas(dict_mGraph_ScurveMean, name="scurveMeanGridAllScandates", drawOpt="APE1")
-    canvScurveSigma_Grid = getSummaryCanvas(dict_mGraph_ScurveSigma, name="scurveSigmaGridAllScandates", drawOpt="APE1")
+    canvFitSum_Grid = getSummaryCanvas(dict_mGraph_fitSum, name="scurveFitSummaryGridAllScandates", drawOpt="APE1", gemType=gemType)
+    canvScurveMean_Grid = getSummaryCanvas(dict_mGraph_ScurveMean, name="scurveMeanGridAllScandates", drawOpt="APE1", gemType=gemType)
+    canvScurveSigma_Grid = getSummaryCanvas(dict_mGraph_ScurveSigma, name="scurveSigmaGridAllScandates", drawOpt="APE1", gemType=gemType)
 
-    canvScurveMean_Grid_iEta = getSummaryCanvasByiEta(dict_mGraph_ScurveMeanByiEta, name="scurveMeanGridByiEtaAllScandates", drawOpt="APE1")
-    canvScurveSigma_Grid_iEta = getSummaryCanvasByiEta(dict_mGraph_ScurveSigmaByiEta, name="scurveSigmaGridByiEtaAllScandates", drawOpt="APE1")
+    canvScurveMean_Grid_iEta = getSummaryCanvasByiEta(dict_mGraph_ScurveMeanByiEta, name="scurveMeanGridByiEtaAllScandates", drawOpt="APE1", gemType=gemType)
+    canvScurveSigma_Grid_iEta = getSummaryCanvasByiEta(dict_mGraph_ScurveSigmaByiEta, name="scurveSigmaGridByiEtaAllScandates", drawOpt="APE1", gemType=gemType)
 
     canvScurveMean_DetSum.cd()
     canvScurveMean_DetSum.cd().SetLogy()

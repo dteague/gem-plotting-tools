@@ -85,18 +85,6 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     import pkg_resources
     MAPPING_PATH = pkg_resources.resource_filename('gempython.gemplotting', 'mapping/')
 
-    from gempython.utils.nesteddict import nesteddict as ndict
-    dict_vfatChanLUT = ndict()
-    from gempython.gemplotting.utils.anautilities import getMapping
-    if args.extChanMapping is not None:
-        dict_vfatChanLUT = getMapping(extChanMapping)
-    elif GEBtype == 'long':
-        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/longChannelMap.txt')
-    elif GEBtype == 'short':
-        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/shortChannelMap.txt')
-    else:
-        raise RuntimeError("No external mapping provided and GEB type was not recognized")
-
     print 'Initializing Histograms'
     if args.isVFAT2:
         dacName = "VThreshold1"
@@ -133,7 +121,20 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     import root_numpy as rp
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     gemType = gemTypeMapping[rp.tree2array(thrTree, branches =[ 'gemType' ] )[0][0]]
-    
+
+    from gempython.utils.nesteddict import nesteddict as ndict
+    dict_vfatChanLUT = ndict()
+    from gempython.gemplotting.utils.anautilities import getMapping
+    if args.extChanMapping is not None:
+        dict_vfatChanLUT = getMapping(extChanMapping, gemType=gemType)
+    elif GEBtype == 'long':
+        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/longChannelMap.txt', gemType=gemType)
+    elif GEBtype == 'short':
+        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/shortChannelMap.txt', gemType=gemType)
+    else:
+        raise RuntimeError("No external mapping provided and GEB type was not recognized")
+
+
     from gempython.tools.hw_constants import vfatsPerGemVariant
     listOfBranches = thrTree.GetListOfBranches()
     if 'vfatID' in listOfBranches:
@@ -273,7 +274,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         getSummaryCanvas(dictSummary=dict_h2D_thrDACProj, name='%s/VFATSummary.png'%outputDir, drawOpt="", gemType=gemType, write2Disk=True)
 
         #Save thrDACMax Distributions Before/After Outlier Rejection
-        canv_vt1Max = getSummaryCanvas(name="canv_vt1Max", initialContent=dict_hMaxThrDAC, initialDrawOpt="hist",gemType=gemType)
+        canv_vt1Max = getSummaryCanvas(dict_hMaxThrDAC, name="canv_vt1Max", drawOpt="hist", gemType=gemType)
         canv_vt1Max = addPlotToCanvas(canv=canv_vt1Max, content=dict_hMaxThrDAC_NoOutlier, drawOpt="hist", gemType=gemType)
         canv_vt1Max.SaveAs(outputDir+'/thrDACMaxSummary.png')
         
@@ -355,8 +356,8 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     #Save output plots new hot channels subtracted off
     if not args.doNotSavePlots:
 
-        getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='%s/ThreshPrunedSummary.png'%outputDir, drawOpt="colz", write2Disk=True)
-        getSummaryCanvas(dictSummary=dict_h2D_thrDACProjPruned, name='%s/VFATPrunedSummary.png'%outputDir, drawOpt="", write2Disk=True)
+        getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='%s/ThreshPrunedSummary.png'%outputDir, drawOpt="colz", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dictSummary=dict_h2D_thrDACProjPruned, name='%s/VFATPrunedSummary.png'%outputDir, drawOpt="", gemType=gemType, write2Disk=True)
 
     #Now determine what thrDAC to use for configuration.  The first threshold bin with no entries for now.
     #Make a text file readable by TTree::ReadFile

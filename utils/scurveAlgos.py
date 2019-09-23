@@ -178,7 +178,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     else:
         printYellow("Calibration info for {0} taken from input file: {1}".format(dacName,args.calFile))
         from gempython.gemplotting.utils.anautilities import parseCalFile
-        tuple_calInfo = parseCalFile(args.calFile)
+        tuple_calInfo = parseCalFile(args.calFile, gemType)
         calDAC2Q_Slope = tuple_calInfo[0]
         calDAC2Q_Intercept = tuple_calInfo[1]
 
@@ -288,11 +288,11 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     dict_vfatChanLUT = ndict()
     from gempython.gemplotting.utils.anautilities import getMapping
     if args.extChanMapping is not None:
-        dict_vfatChanLUT = getMapping(args.extChanMapping)
+        dict_vfatChanLUT = getMapping(args.extChanMapping, gemType=gemType)
     elif GEBtype == 'long':
-        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/longChannelMap.txt')
+        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/longChannelMap.txt', gemType=gemType)
     elif GEBtype == 'short':
-        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/shortChannelMap.txt')
+        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/shortChannelMap.txt', gemType=gemType)
     else:
         outF.Close()
         inFile.Close()
@@ -356,7 +356,9 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             chanMasks=None, 
             calDAC2Q_m=calDAC2Q_Slope, 
             calDAC2Q_b=calDAC2Q_Intercept,
-            vfatList=vfatList)
+            vfatList=vfatList,
+            gemType=gemType
+    )
     
     if performFit:
         # Fit Scurves        
@@ -462,7 +464,9 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 chanMasks=masks, 
                 calDAC2Q_m=calDAC2Q_Slope, 
                 calDAC2Q_b=calDAC2Q_Intercept,
-                vfatList=vfatList)
+                vfatList=vfatList,
+                gemType=gemType
+        )
         
         # Set the branches of the TTree and store the results
         # Due to weird ROOT black magic this cannot be done here
