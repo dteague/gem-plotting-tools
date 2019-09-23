@@ -24,7 +24,7 @@ def anaUltraLatencyStar(inputs):
     """
     return anaUltraLatency(*inputs)
 
-def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=None, outputDir=None, outfilename="latencyAna.root", performFit=False, gemType="ge11"):
+def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=None, outputDir=None, outfilename="latencyAna.root", performFit=False):
     """
     Analyzes data taken by ultraLatency.py
 
@@ -75,6 +75,13 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     # Get ChipID's
     import numpy as np
     import root_numpy as rp
+    ##### NEED TO FIX
+    #### VERY TEMPORARY
+    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
+    gemType = gemTypeMapping[rp.tree2array(inFile.latTree, branches =[ 'gemType' ] )[0][0]]
+    print gemType
+    ##### END
+    
     listOfBranches = inFile.latTree.GetListOfBranches()
     if 'vfatID' in listOfBranches:
         array_chipID = np.unique(rp.tree2array(inFile.latTree, branches = [ 'vfatID','vfatN' ] ))

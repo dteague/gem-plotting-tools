@@ -88,12 +88,15 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
 
     vfatArray = rp.tree2array(tree=dacScanTree,branches=list_bNames)
     dacNameArray = np.unique(vfatArray['nameX'])
-
+    detName = np.unique(rp.tree2array(tree=dacScanTree, branches='detName'))[0]
+    gemType = detName[0][:detName[0].find('-')].lower()
+    print dacNameArray
+    
     # Get VFATID's
     vfatIDArray = getSubArray(vfatArray, ['vfatID','vfatN'])
     vfatIDArray = np.sort(vfatIDArray,order='vfatN')['vfatID'] # index now gauranteed to match vfatN
 
-    gemType = "ge11"
+    
 
     # make the crateMap
     list_bNames.remove('dacValY')
@@ -1541,7 +1544,7 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
 
     maxiEtaiPhiPair=chamber_maxiEtaiPhiPair[gemType]
     
-    canv = r.TCanvas('canv', 'canv', 500 * maxiEtaiPhiPair[0], 500 * maxiEtaiPhiPair[1])
+    canv = r.TCanvas(name, name, 500 * maxiEtaiPhiPair[0], 500 * maxiEtaiPhiPair[1])
     
     if dictSummary is not None and dictSummaryPanPin2 is None:
         canv.Divide(maxiEtaiPhiPair[0], maxiEtaiPhiPair[1])
@@ -1605,7 +1608,7 @@ def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType=
     maxiEta = chamber_maxiEtaiPhiPair[gemType][0]
     xyPair = (4,maxiEta//4) 
     
-    canv = r.TCanvas('canv', 'canv', 500 * xyPair[0], 500 * xyPair[1])
+    canv = r.TCanvas(name, name, 500 * xyPair[0], 500 * xyPair[1])
     canv.Divide(xyPair[0], xyPair[1])
 
     for index in range(1,maxiEta+1):
@@ -1625,7 +1628,7 @@ def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType=
 
 
 
-def addPlotToCanvas(canv=None, content = None, drawOpt = '', gemType="gem11"):
+def addPlotToCanvas(canv=None, content = None, drawOpt = '', gemType="ge11"):
     """
     Creates a A by B sized canvas for summary plots.
     

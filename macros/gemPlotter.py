@@ -770,7 +770,7 @@ if __name__ == '__main__':
     if options.all_plots:
         from gempython.gemplotting.utils.anautilities import getSummaryCanvas
         strSummaryName = "summary_%s_vs_%s_%s"%(options.branchName, strIndepVarNoBraces,strStripOrChan)
-        canv_summary = getSummaryCanvas(listPlots, name=strSummaryName, drawOpt=strDrawOpt)
+        canv_summary = getSummaryCanvas(listPlots, name=strSummaryName, drawOpt=strDrawOpt, gemType=gemType)
         
         strCanvName = "%s/%s.png"%(elogPath,strSummaryName)
         canv_summary.SaveAs(strCanvName)

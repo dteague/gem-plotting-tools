@@ -17,8 +17,8 @@ if __name__ == '__main__':
     parser.set_defaults(outfilename="SBitMonitorData.root")
     args = parser.parse_args()
     
-    filename = args.filename[:-5]
-    os.system("mkdir " + args.filename[:-5])
+    filename = args.infilename[:-5]
+    os.system("mkdir " + args.infilename[:-5])
 
     print filename
     outfilename = args.outfilename
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     outF = r.TFile(filename+'/'+outfilename, 'recreate')
     inF = r.TFile(filename+'.root')
 
-    gemType = "ge11"
+    
     
     # Determine the rates scanned
     print('Determining rates tested')
@@ -41,7 +41,14 @@ if __name__ == '__main__':
     calEnableValues = np.unique(initInfo['calEnable'])
     isValidValues = np.unique(initInfo['isValid'])
     ratesUsed = np.unique(initInfo['ratePulsed'])
-
+    ##### NEED TO FIX
+    #### VERY TEMPORARY
+    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
+    print rp.tree2array(tree=inF.sbitDataTree, branches ='gemType')
+    gemType = gemTypeMapping[rp.tree2array(tree=inF.sbitDataTree, branches =[ 'gemType' ] )[0][0]]
+    print gemType
+    ##### END
+    
     print('Initializing histograms')
     from gempython.utils.nesteddict import nesteddict as ndict, flatten
 
@@ -302,9 +309,9 @@ if __name__ == '__main__':
         # All Rates
         rateCanvas = getSummaryCanvas(dict_g_rateObsCTP7VsRatePulsed[isValid],
                                       name="rateObservedVsRatePulsed_{0}".format(strValidity),
-                                      drawOpt="APE1")
-        rateCanvas = addPlotToCanvas(rateCanvas, dict_g_rateObsFPGAVsRatePulsed[isValid], drawOpt="PE1")
-        rateCanvas = addPlotToCanvas(rateCanvas, dict_g_rateObsVFATVsRatePulsed[isValid], drawOpt="PE1")
+                                      drawOpt="APE1", gemType=gemType)
+        rateCanvas = addPlotToCanvas(rateCanvas, dict_g_rateObsFPGAVsRatePulsed[isValid], drawOpt="PE1", gemType=gemType)
+        rateCanvas = addPlotToCanvas(rateCanvas, dict_g_rateObsVFATVsRatePulsed[isValid], drawOpt="PE1", gemType=gemType)
         
         # Make the legend
         rateLeg = r.TLegend(0.5,0.5,0.9,0.9)
@@ -328,11 +335,11 @@ if __name__ == '__main__':
         rateCanvas.SaveAs("{0}/rateObservedVsRatePulsed_{1}.png".format(filename,strValidity))
 
         # CalDisable rate 0 case
-        getSummaryCanvas(dict_h_sbitMulti[isValid][0][0], name="{0}/sbitMulti_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
-        getSummaryCanvas(dict_h_sbitSize[isValid][0][0], name="{0}/sbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+        getSummaryCanvas(dict_h_sbitMulti[isValid][0][0], name="{0}/sbitMulti_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dict_h_sbitSize[isValid][0][0], name="{0}/sbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="", gemType=gemType, write2Disk=True)
 
-        getSummaryCanvas(dict_h_sbitObsVsChanPulsed[isValid][0][0], name="{0}/sbitObsVsChanUnmasked_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
-        getSummaryCanvas(dict_h_sbitMultiVsSbitSize[isValid][0][0], name="{0}/sbitMultiVsSbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+        getSummaryCanvas(dict_h_sbitObsVsChanPulsed[isValid][0][0], name="{0}/sbitObsVsChanUnmasked_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dict_h_sbitMultiVsSbitSize[isValid][0][0], name="{0}/sbitMultiVsSbitSize_{1}_calDisabled_0Hz.png".format(filename,strValidity), drawOpt="COLZ", gemType=gemType, write2Disk=True)
         
         for idx,rate in enumerate(ratesUsed):
             # Sum over all rates
@@ -375,11 +382,11 @@ if __name__ == '__main__':
                         dict_h_sbitObsVsChanPulsed[isValid][1][-1][vfat].Add(dict_h_sbitObsVsChanPulsed[isValid][1][rate][vfat])
                         dict_h_sbitMultiVsSbitSize[isValid][1][-1][vfat].Add(dict_h_sbitMultiVsSbitSize[isValid][1][rate][vfat])
         
-                getSummaryCanvas(dict_h_sbitMulti[isValid][1][-1], name="{0}/sbitMulti_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
-                getSummaryCanvas(dict_h_sbitSize[isValid][1][-1], name="{0}/sbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", write2Disk=True)
+                getSummaryCanvas(dict_h_sbitMulti[isValid][1][-1], name="{0}/sbitMulti_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", gemType=gemType, write2Disk=True)
+                getSummaryCanvas(dict_h_sbitSize[isValid][1][-1], name="{0}/sbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="", gemType=gemType, write2Disk=True)
 
-                getSummaryCanvas(dict_h_sbitObsVsChanPulsed[isValid][1][-1], name="{0}/sbitObsVsChanPulsed_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
-                getSummaryCanvas(dict_h_sbitMultiVsSbitSize[isValid][1][-1], name="{0}/sbitMultiVsSbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", write2Disk=True)
+                getSummaryCanvas(dict_h_sbitObsVsChanPulsed[isValid][1][-1], name="{0}/sbitObsVsChanPulsed_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", gemType=gemType, write2Disk=True)
+                getSummaryCanvas(dict_h_sbitMultiVsSbitSize[isValid][1][-1], name="{0}/sbitMultiVsSbitSize_{1}_calEnabled_SumOfAllRates.png".format(filename,strValidity), drawOpt="COLZ", gemType=gemType, write2Disk=True)
 
     print("Storing TObjects in output TFile")
     # Per VFAT Plots

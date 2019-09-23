@@ -371,35 +371,35 @@ if __name__ == '__main__':
     # Summaries Canvas
     #
     # make3x8Canvas
-    canv = getSummaryCanvas(vfat_h_strip, drawOpt="hist")
+    canv = getSummaryCanvas(vfat_h_strip, drawOpt="hist", gemType=gemType)
     canv.SetName("Strip_canv")
     canv.SetTitle("Strip_canv")
     canv.SaveAs(filename+'/StripSummary.png')
 
-    canv = getSummaryCanvas(vfat_h_ch, drawOpt="hist")
+    canv = getSummaryCanvas(vfat_h_ch, drawOpt="hist", gemType=gemType)
     canv.SetName("Chan_canv")
     canv.SetTitle("Chan_canv")
     canv.SaveAs(filename+'/ChanSummary.png')
 
-    canv = getSummaryCanvas(vfat_h_sbitSize, drawOpt="hist")
+    canv = getSummaryCanvas(vfat_h_sbitSize, drawOpt="hist", gemType=gemType)
     canv.SetName("SbitSize_canv")
     canv.SetTitle("SbitSize_canv")
     canv.SaveAs(filename+'/SbitSizeSummary.png')
 
-    canv = getSummaryCanvas(vfat_h_delay, drawOpt="hist")
+    canv = getSummaryCanvas(vfat_h_delay, drawOpt="hist", gemType=gemType)
     canv.SetName("L1A_Delay_canv")
     canv.SetTitle("L1A_Delay_canv")
     canv.SaveAs(filename+'/L1A_DelaySummary.png')
 
     # getSummaryByiEta
     getSummaryCanvasByiEta(ieta_h_strip, name='%s/ietaStripSummary.png' %
-                      filename, trimPt=None, drawOpt="", write2Disk=True)
+                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
     getSummaryCanvasByiEta(ieta_h_ch, name='%s/ietaChanSummary.png' %
-                      filename, trimPt=None, drawOpt="", write2Disk=True)
+                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
     getSummaryCanvasByiEta(ieta_h_sbitSize, name='%s/ietaSbitSizeSummary.png' %
-                      filename, trimPt=None, drawOpt="", write2Disk=True)
+                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
     getSummaryCanvasByiEta(ieta_h_delay, name='%s/ietaDelaySummary.png' %
-                      filename, trimPt=None, drawOpt="", write2Disk=True)
+                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
 
     # Making&Filling folders in the TFile
     outF.cd()

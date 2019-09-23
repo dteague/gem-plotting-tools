@@ -430,7 +430,7 @@ def fitScanData(treeFileName, isVFAT3=False, calFileName=None, calTuple=None, ge
     nVFATS = vfatsPerGemVariant[gemType]
     # Get the fitter
     if calFileName is not None:
-        tuple_calInfo = parseCalFile(calFileName)
+        tuple_calInfo = parseCalFile(calFileName, gemType)
         fitter = ScanDataFitter(
                 calDAC2Q_m = tuple_calInfo[0],
                 calDAC2Q_b = tuple_calInfo[1],
@@ -445,7 +445,7 @@ def fitScanData(treeFileName, isVFAT3=False, calFileName=None, calTuple=None, ge
                 nVFATS=nVFATS
                 )
     else:
-        fitter = ScanDataFitter(isVFAT3=isVFAT3)
+        fitter = ScanDataFitter(isVFAT3=isVFAT3, nVFATS=nVFATS)
         pass
 
     # Read the output data
