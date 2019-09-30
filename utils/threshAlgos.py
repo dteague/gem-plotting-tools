@@ -116,12 +116,19 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         raise IOError("Input file {0} is a Zombie, check to make sure you have write permissions and file has expected size".format(thrFilename))
     thrTree = inFile.thrTree
 
-    # Get chip ID's
     import numpy as np
     import root_numpy as rp
+    
+    ##### NEED TO FIX
+    #### VERY TEMPORARY
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    gemType = gemTypeMapping[rp.tree2array(thrTree, branches =[ 'gemType' ] )[0][0]]
-
+    if 'gemType' not in thrTree.GetListOfBranches():
+        gemType = "ge11"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=thrTree, branches =[ 'gemType' ] )[0][0]]
+    print gemType
+    ##### END
+    
     from gempython.utils.nesteddict import nesteddict as ndict
     dict_vfatChanLUT = ndict()
     from gempython.gemplotting.utils.anautilities import getMapping
@@ -561,9 +568,11 @@ def calibrateThrDAC(args):
     thrDacName = parsedTuple[1]
     chamberName = listChamberAndScanDate[0][0]
 
-    gemType="ge11"
-    # from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    # gemType = gemTypeMapping[rp.tree2array(scurveTree, branches =[ 'gemType' ] )[0][0]]
+    # ##### NEED TO FIX
+    # #### VERY TEMPORARY
+    gemType = chamberName[:chamberName.find("-")].lower()
+    # ##### END
+    
     
     # Do we load an optional vfat serial number table? (e.g. chips did not have serial number in efuse burned in)
     import numpy as np
@@ -633,9 +642,9 @@ def calibrateThrDAC(args):
         scanFile = r.TFile(filename,"READ")
 
         if not scanFile.IsOpen():
-            raise IOError("calibrateThrDAC(): File {0} is not open or is not readable; please check input list of scandates: {1}".format(filename,inputFile))
+            raise IOError("calibrateThrDAC(): File {0} is not open or is not readable; please check input list of scandates: {1}".format(filename,args.inputFile))
         if scanFile.IsZombie():
-            raise IOError("calibrateThrDAC(): File {0} is a zombie; consider removing this from your input list of scandates: {1}".format(filename,inputFile))
+            raise IOError("calibrateThrDAC(): File {0} is a zombie; consider removing this from your input list of scandates: {1}".format(filename,args.inputFile))
 
         # Determine vfatID
         list_bNames = ['vfatN','vfatID']
@@ -655,7 +664,7 @@ def calibrateThrDAC(args):
         #we also remove scurve fits in which the noise or the threshold are equal to their initial values
         scurveFitMask4 = np.logical_and(scurveFitData['noise'] != 0,scurveFitData['threshold'] != 0)
 
-        for vfat in range(-1,24):
+        for vfat in range(-1,vfatsPerGemVariant[gemType]):
             if vfat == -1:
                 dict_nBadChannels[vfat][infoTuple[2]]["DeadChannel"] = len(scurveFitData[scurveFitMask1 == False])
                 dict_nBadChannels[vfat][infoTuple[2]]["HighNoise"] = len(scurveFitData[scurveFitMask2 == False])
@@ -918,7 +927,6 @@ def calibrateThrDAC(args):
     if args.debug:
         print("| vfatN | coef4 | coef3 | coef2 | coef1 | coef0 | noise | noise_err |")
         print("| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :-------: |")
-    from gempython.tools.hw_constants import vfatsPerGemVariant
     for vfat in range(-1,vfatsPerGemVariant[gemType]):
         if vfat == -1:
             suffix = "All"
@@ -1125,7 +1133,8 @@ def calibrateThrDAC(args):
             dict_canvScurveSigmaVsThrDac[vfat].SaveAs("{0}/{1}.png".format(args.outputDir,dict_canvScurveSigmaVsThrDac[vfat].GetName()))
             dict_canvScurveMeanVsThrDac_BoxPlot[vfat].SaveAs("{0}/{1}.png".format(args.outputDir,dict_canvScurveMeanVsThrDac_BoxPlot[vfat].GetName()))
             dict_canvScurveSigmaVsThrDac_BoxPlot[vfat].SaveAs("{0}/{1}.png".format(args.outputDir,dict_canvScurveSigmaVsThrDac_BoxPlot[vfat].GetName()))
-    
+
+    from gempython.gemplotting.utils.anautilities import getSummaryCanvas, addPlotToCanvas
     # Make summary canvases, always save these
     canvScurveMeanByThrDac_Summary = getSummaryCanvas(dict_mGraphScurveMean, name="canvScurveMeanByThrDac_Summary", drawOpt="APE1", gemType=gemType)
     canvScurveSigmaByThrDac_Summary = getSummaryCanvas(dict_mGraphScurveSigma, name="canvScurveSigmaByThrDac_Summary", drawOpt="APE1", gemType=gemType)
@@ -1203,7 +1212,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
     from tabulate import tabulate
 
     from gempython.gemplotting.utils.anautilities import findInflectionPts
-    from gempython.gemplotting.utils.anautilities import make3x8Canvas
+    from gempython.gemplotting.utils.anautilities import getSummaryCanvas
 
     # Allow for yellow warning color
     from gempython.utils.gemlogger import printYellow
@@ -1230,7 +1239,8 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
             return entry['detName'][0]
         else:
             return chamber_config[(entry['shelf'],entry['slot'],entry['link'])]
-        
+
+
     vfatArray = rp.tree2array(tree=rateTree,branches=list_bNames)
     dacNameArray = np.unique(vfatArray['nameX'])
 
@@ -1273,6 +1283,16 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
         printYellow("crateMap:\n{0}".format(crateMap))
         printYellow("dacNameArray:\n{0}".format(dacNameArray))
 
+    ##### NEED TO FIX
+    #### VERY TEMPORARY
+    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
+    if 'gemType' not in rateTree.GetListOfBranches():
+        gemType = "ge21"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=rateTree, branches =[ 'gemType' ] )[0][0]]
+    print gemType
+    ##### END
+        
     # make output directories
     from gempython.utils.wrappers import runCommand
     from gempython.gemplotting.utils.anautilities import getDirByAnaType
@@ -1317,7 +1337,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetMarkerStyle(23)
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetMarkerSize(0.8)
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetLineWidth(2)
-
+                print dacName, ohKey, vfat
                 # 2D Distributions
                 dict_vfatCHVsDACNameX_Rate2D[dacName][ohKey][vfat] = r.TGraph2D()
                 dict_vfatCHVsDACNameX_Rate2D[dacName][ohKey][vfat].SetName("g2D_vfatCH_vs_{0}_rate_vfat{1}".format(dacName.replace("_","-"),vfat))
@@ -1327,12 +1347,13 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                 pass
             pass
         pass
-
+    print "here"
     # create output TFiles
     outputFiles = {}
     for entry in crateMap:
         ohKey = (entry['shelf'],entry['slot'],entry['link'])        
         detName = getDetName(entry)
+        ohKey = (entry['shelf'],entry['slot'],entry['link'])
         if scandate == 'noscandate':
             outputFiles[ohKey] = r.TFile(elogPath+"/"+detName+"/"+outfilename,'recreate')
         else:
@@ -1344,10 +1365,11 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
             outputFiles[ohKey] = r.TFile(strDirName+scandate+"/"+outfilename,'recreate')
             pass
         pass
-
+    print outputFiles
     # Loop over events the tree and fill plots
     print("Looping over stored events in rateTree")
     from math import sqrt
+    import traceback, itertools, sys, os
     for event in rateTree:
         ohKey = (event.shelf,event.slot,event.link)
         vfat = event.vfatN
@@ -1375,7 +1397,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                         event.vfatCH,
                         event.rate)
         except AttributeError:
-            print("Point Number: ", counter)
+            # print("Point Number: ", counter) ### variable missing?
             print("event.vfatCH = ", event.vfatCH)
             print("dacName = ", dacName)
             print("ohKey = ", ohKey)
@@ -1490,7 +1512,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                     kneeLine.append(r.TLine(dict_dacInflectPts[dacName][ohKey][vfat][0], 10.0, dict_dacInflectPts[dacName][ohKey][vfat][0], ymax) )
                     kneeLine[vfat].SetLineColor(2)
                     kneeLine[vfat].SetVertical()
-                    canv_Summary1D.cd(chamber_vfatPos2PadIdx[vfat] )
+                    canv_Summary1D.cd(chamber_vfatPos2PadIdx[gemType][vfat] )
                     kneeLine[vfat].Draw()
                 canv_Summary1D.Update()
 

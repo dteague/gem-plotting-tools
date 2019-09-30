@@ -75,12 +75,19 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     # Get ChipID's
     import numpy as np
     import root_numpy as rp
+
     ##### NEED TO FIX
     #### VERY TEMPORARY
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    gemType = gemTypeMapping[rp.tree2array(inFile.latTree, branches =[ 'gemType' ] )[0][0]]
+    if 'gemType' not in inFile.latTree.GetListOfBranches():
+        gemType = "ge11"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=inFile.latTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
+        
+
+
     
     listOfBranches = inFile.latTree.GetListOfBranches()
     if 'vfatID' in listOfBranches:

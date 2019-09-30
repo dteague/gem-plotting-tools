@@ -45,9 +45,19 @@ if __name__ == "__main__":
     r.gROOT.SetBatch(True)
     r.gStyle.SetOptStat(1111111)
 
-    gemType = "ge11"
-    from gempython.tools.hw_constants import vfatsPerGemVariant
+        ##### NEED TO FIX
+    #### VERY TEMPORARY
+    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
+    if 'gemType' not in inFile.latTree.GetListOfBranches():
+        gemType = "ge11"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=inFile.latTree, branches =[ 'gemType' ] )[0][0]]
+    print gemType
+    ##### END
+
+
     
+    from gempython.tools.hw_constants import vfatsPerGemVariant
     # Open input file
     print("Opening input file: {0}".format(args.infile))
     infile = r.TFile(args.infile,"READ")
@@ -157,6 +167,7 @@ if __name__ == "__main__":
         # Get Distributions from File
         for vfat,path in enumerate(vfatDirs):
             # Load Dist
+            print baseDir[args.slot][oh]+path+"/n_hits_per_event"
             vfatHitMulti[args.slot][oh][vfat] = infile.Get(baseDir[args.slot][oh]+path+"/n_hits_per_event") 
             vfatLatHists[args.slot][oh][vfat] = infile.Get(baseDir[args.slot][oh]+path+"/latencyScan")
             vfatLatHists2D[args.slot][oh][vfat] = infile.Get(baseDir[args.slot][oh]+path+"/latencyScan2D")
