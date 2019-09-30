@@ -41,14 +41,17 @@ if __name__ == '__main__':
     calEnableValues = np.unique(initInfo['calEnable'])
     isValidValues = np.unique(initInfo['isValid'])
     ratesUsed = np.unique(initInfo['ratePulsed'])
+
     ##### NEED TO FIX
     #### VERY TEMPORARY
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    print rp.tree2array(tree=inF.sbitDataTree, branches ='gemType')
-    gemType = gemTypeMapping[rp.tree2array(tree=inF.sbitDataTree, branches =[ 'gemType' ] )[0][0]]
+    if 'gemType' not in inF.sbitDataTree.GetListOfBranches():
+        gemType = "ge21"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=inF.sbitDataTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
-    
+
     print('Initializing histograms')
     from gempython.utils.nesteddict import nesteddict as ndict, flatten
 

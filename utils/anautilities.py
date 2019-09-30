@@ -86,10 +86,16 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
 	else:
             return chamber_config[(entry['shelf'],entry['slot'],entry['link'])]
 
+    def getGemType(entry):
+        detName = getDetName(entry)
+        return detName[:detName.find('-')].lower()
+        
+
+       
     vfatArray = rp.tree2array(tree=dacScanTree,branches=list_bNames)
     dacNameArray = np.unique(vfatArray['nameX'])
-    detName = np.unique(rp.tree2array(tree=dacScanTree, branches='detName'))[0]
-    gemType = detName[0][:detName[0].find('-')].lower()
+
+                    
     print dacNameArray
     
     # Get VFATID's
@@ -104,7 +110,12 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
     list_bNames.remove('vfatID')
     list_bNames.remove('vfatN')
     crateMap = np.unique(rp.tree2array(tree=dacScanTree,branches=list_bNames))
+    
+    gemType = getGemType(crateMap[0])
+            
 
+
+    
     # get nonzero VFATs
     dict_nonzeroVFATs = {}
     for entry in crateMap:
@@ -1542,12 +1553,12 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
     legend = r.TLegend(0.75,0.7,0.88,0.88)
     r.gStyle.SetOptStat(0)
 
-    maxiEtaiPhiPair=chamber_maxiEtaiPhiPair[gemType]
+    maxiEta, maxiPhi =chamber_maxiEtaiPhiPair[gemType]
     
-    canv = r.TCanvas(name, name, 500 * maxiEtaiPhiPair[0], 500 * maxiEtaiPhiPair[1])
+    canv = r.TCanvas(name, name, 500 * maxiEta, 500 * maxiPhi)
     
     if dictSummary is not None and dictSummaryPanPin2 is None:
-        canv.Divide(maxiEtaiPhiPair[0], maxiEtaiPhiPair[1])
+        canv.Divide(maxiEta, maxiPhi)
         for vfat, padIdx in chamber_vfatPos2PadIdx[gemType].iteritems():
             canv.cd(padIdx)
             try:
@@ -1566,15 +1577,15 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
             
     elif dictSummary is not None and dictSummaryPanPin2 is not None:
         # possibly remove unless fixed, or at the very least needs to be improved!!
-        canv.Divide(maxiEtaiPhiPair[0], 2*maxiEtaiPhiPair[1])
-        shift = maxiEtaiPhiPair[0]*(maxiEtaiPhiPair[1]+4) + 1
+        canv.Divide(maxiEta, 2*maxiPhi)
+        shift = maxiEta*(maxiPhi+4) + 1
         for vfat in range(0, vfatsPerGemVariant[gemType]):
-            if vfat % niEta == 0:
-                shift -= niEta*3
+            if vfat % maxiEta == 0:
+                shift -= maxiEta*3
             canv.cd(vfat+shift)
             dictSummary[vfat].Draw(drawOpt)
             canv.Update()
-            canv.cd(vfat+shift+maxiEtaiPhiPair[0])
+            canv.cd(vfat+shift+maxiEta)
             dictSummaryPanPin2[vfat].Draw(drawOpt)
             canv.Update()
             pass
