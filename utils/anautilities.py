@@ -95,9 +95,6 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
     vfatArray = rp.tree2array(tree=dacScanTree,branches=list_bNames)
     dacNameArray = np.unique(vfatArray['nameX'])
 
-                    
-    print dacNameArray
-    
     # Get VFATID's
     vfatIDArray = getSubArray(vfatArray, ['vfatID','vfatN'])
     vfatIDArray = np.sort(vfatIDArray,order='vfatN')['vfatID'] # index now gauranteed to match vfatN
@@ -151,7 +148,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
     from gempython.utils.gemlogger import colormsg
     import logging
     if adcName not in ['ADC0', 'ADC1']:
-        raise ValueError(colormsg("Error: unexpected value of adcName: '%s'"%adcName,logging.ERROR), os.EX_DATAERR)
+        raise ValueError(colormsg("Error: unexpected value of adcName: '{0}'".format(adcName),logging.ERROR), os.EX_DATAERR)
 
     from gempython.gemplotting.utils.anaInfo import nominalDacValues, nominalDacScalingFactors
     nominal = {}
@@ -181,7 +178,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
                 nominal[dacName] *= pow(10.0,-3)
             else:
                 # Maybe a TypeError is more appropriate...?
-                raise ValueError(colormsg("Error: unexpected units: '%s'"%nominalDacValues[dacName][1],logging.ERROR), os.EX_DATAERR)
+                raise ValueError(colormsg("Error: unexpected units: '{0}'".format(nominalDacValues[dacName][1]),logging.ERROR), os.EX_DATAERR)
 
     #the nominal reference current is 10 uA and it has a scaling factor of 0.5
     nominal_iref = 10*0.5
@@ -467,15 +464,15 @@ def filePathExists(searchPath, subPath=None, debug=False):
     
     testPath = searchPath
     if subPath is not None:
-        testPath = "%s/%s"%(searchPath, subPath)
+        testPath = "{0}/{1}".format(searchPath, subPath)
 
     if not os.path.exists(testPath):
         if debug:
-            print "Unable to find location: %s"%(testPath)
+            print("Unable to find location: {0}".format(testPath))
         return False
     else:
         if debug:
-            print "Found %s"%s(testPath)
+            print("Found {0}".format(testPath))
         return True
 
 # Find Inflection Point /////////////////////////////////////////////////////////////////
@@ -595,7 +592,7 @@ def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel, gemType="ge11"):
     import os
 
     if mapName not in mappingNames:
-        print("get2DMapOfDetector(): mapName %s not recognized"%mapName)
+        print("get2DMapOfDetector(): mapName {0} not recognized".format(mapName))
         print("\tAvailable options are:")
         print("\t",mappingNames)
         raise LookupError
@@ -604,7 +601,7 @@ def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel, gemType="ge11"):
     from ..mapping.chamberInfo import chamber_maxiEtaiPhiPair
     maxiEta, maxiPhi = chamber_maxiEtaiPhiPair[gemType]
     
-    hRetMap = r.TH2F("ieta_vs_%s_%s"%(mapName,zLabel),"",maxiPhi*128, -0.5, maxiPhi*128-0.5, maxiEta, 0.5, maxiEta + 0.5)
+    hRetMap = r.TH2F("ieta_vs_{0}_{1}".format(mapName,zLabel),"",maxiPhi*128, -0.5, maxiPhi*128-0.5, maxiEta, 0.5, maxiEta + 0.5)
     hRetMap.SetXTitle(mapName)
     hRetMap.SetYTitle("i#eta")
     hRetMap.SetZTitle(zLabel)
@@ -691,8 +688,8 @@ def getDirByAnaType(anaType, cName, ztrim=4):
 
     # Check anaType is understood
     if anaType not in ana_config.keys():
-        print "getDirByAnaType() - Invalid analysis specificed, please select only from the list:"
-        print ana_config.keys()
+        print("getDirByAnaType() - Invalid analysis specificed, please select only from the list:")
+        print(ana_config.keys())
         exit(os.EX_USAGE)
         pass
 
@@ -701,41 +698,41 @@ def getDirByAnaType(anaType, cName, ztrim=4):
 
     dirPath = ""
     if anaType == "armDacCal":
-        dirPath = "%s/%s/%s"%(dataPath,cName,anaType)
+        dirPath = "{0}/{1}/{2}".format(dataPath,cName,anaType)
     elif anaType == "dacScanV3":
-        dirPath = "%s/%s"%(dataPath,anaType)
+        dirPath = "{0}/{1}".format(dataPath,anaType)
     elif anaType == "latency":
-        dirPath = "%s/%s/%s/trk/"%(dataPath,cName,anaType)
+        dirPath = "{0}/{1}/{2}/trk/".format(dataPath,cName,anaType)
     elif anaType == "sbitMonInt":
-        dirPath = "%s/%s/sbitMonitor/intTrig/"%(dataPath,cName)
+        dirPath = "{0}/{1}/sbitMonitor/intTrig/".format(dataPath,cName)
     elif anaType == "sbitMonRO":
-        dirPath = "%s/%s/sbitMonitor/readout/"%(dataPath,cName)
+        dirPath = "{0}/{1}/sbitMonitor/readout/".format(dataPath,cName)
     elif anaType == "sbitRatech":
         if cName is None:
-            dirPath = "%s/sbitRate/perchannel"%(dataPath)
+            dirPath = "{0}/sbitRate/perchannel".format(dataPath)
         else:
-            dirPath = "%s/%s/sbitRate/perchannel/"%(dataPath,cName)
+            dirPath = "{0}/{1}/sbitRate/perchannel/".format(dataPath,cName)
     elif anaType == "sbitRateor":
         if cName is None:
-            dirPath = "%s/sbitRate/channelOR"%(dataPath)
+            dirPath = "{0}/sbitRate/channelOR".format(dataPath)
         else:
-            dirPath = "%s/%s/sbitRate/channelOR/"%(dataPath,cName)
+            dirPath = "{0}/{1}/sbitRate/channelOR/".format(dataPath,cName)
     elif anaType == "scurve":
-        dirPath = "%s/%s/%s/"%(dataPath,cName,anaType)
+        dirPath = "{0}/{1}/{2}/".format(dataPath,cName,anaType)
     elif anaType == "temperature":
-        dirPath = "%s/%s"%(dataPath,anaType)
+        dirPath = "{0}/{1}".format(dataPath,anaType)
     elif anaType == "thresholdch":
-        dirPath = "%s/%s/threshold/channel/"%(dataPath,cName)
+        dirPath = "{0}/{1}/threshold/channel/".format(dataPath,cName)
     elif anaType == "thresholdvftrig":
-        dirPath = "%s/%s/threshold/vfat/trig/"%(dataPath,cName)
+        dirPath = "{0}/{1}/threshold/vfat/trig/".format(dataPath,cName)
     elif anaType == "thresholdvftrk":
-        dirPath = "%s/%s/threshold/vfat/trk/"%(dataPath,cName)
+        dirPath = "{0}/{1}/threshold/vfat/trk/".format(dataPath,cName)
     elif anaType == "trim":
-        dirPath = "%s/%s/%s/z%f/"%(dataPath,cName,anaType,ztrim)
+        dirPath = "{0}/{1}/{2}/z{3}/".format(dataPath,cName,anaType,ztrim)
     elif anaType == "trimV3":
-        dirPath = "%s/%s/trim/"%(dataPath,cName)
+        dirPath = "{0}/{1}/trim/".format(dataPath,cName)
     elif anaType == "iterTrim":
-        dirPath = "%s/%s/itertrim/"%(dataPath,cName)
+        dirPath = "{0}/{1}/itertrim/".format(dataPath,cName)
 
     return dirPath
 
@@ -826,8 +823,8 @@ def getMapping(mappingFileName, isVFAT2=True, gemType="ge11"):
     try:
         mapFile = open(mappingFileName, 'r')
     except IOError as e:
-        print "Exception:", e
-        print "Failed to open: '%s'"%mappingFileName
+        print("Exception:", e)
+        print("Failed to open: '{0}'".format(mappingFileName))
     else:
         listMapData = mapFile.readlines()
     finally:
@@ -1291,35 +1288,35 @@ def makeListOfScanDatesFile(chamberName, anaType, startDate=None, endDate=None, 
     listOfScanDates = os.listdir(dirPath)
 
     try:
-        listOfScanDatesFile = open('%s/listOfScanDates.txt'%dirPath,'w+')
+        listOfScanDatesFile = open('{0}/listOfScanDates.txt'.format(dirPath),'w+')
     except IOError as e:
-        print "Exception:", e
-        print "Failed to open write output file"
-        print "Is the below directory writeable?"
-        print ""
-        print "\t%s"%dirPath
-        print ""
+        print("Exception:", e)
+        print("Failed to open write output file")
+        print("Is the below directory writeable?")
+        print("")
+        print("\t{0}".format(dirPath))
+        print("")
         exit(os.EX_IOERR)
         pass
     
-    listOfScanDatesFile.write('ChamberName%sscandate\n'%delim)
+    listOfScanDatesFile.write('ChamberName{0}scandate\n'.format(delim))
     for scandate in listOfScanDates:
         if "current" == scandate:
             continue
         try:
             scandateInfo = [ int(info) for info in scandate.split('.') ]
         except ValueError as e:
-            print "Skipping directory %s/%s"%(dirPath,scandate)
+            print("Skipping directory {0}/{1}".format(dirPath,scandate))
             continue
         thisDay = datetime.date(scandateInfo[0],scandateInfo[1],scandateInfo[2])
 
         if (startDay < thisDay and thisDay <= endDay):
-            listOfScanDatesFile.write('%s%s%s\n'%(chamberName,delim,scandate))
+            listOfScanDatesFile.write('{0}{1}{2}\n'.format(chamberName,delim,scandate))
             pass
         pass
 
     listOfScanDatesFile.close()
-    runCommand( ['chmod','g+rw','%s/listOfScanDates.txt'%dirPath] )
+    runCommand( ['chmod','g+rw','{0}/listOfScanDates.txt'.format(dirPath)] )
 
     return
 
@@ -1472,8 +1469,8 @@ def parseListOfScanDatesFile(filename, alphaLabels=False, delim='\t'):
     try:
         fileScanDates = open(filename, 'r') 
     except IOError as e:
-        print '%s does not seem to exist or is not readable'%(filename)
-        print e
+        print('{0} does not seem to exist or is not readable'.format(filename))
+        print(e)
         exit(os.EX_NOINPUT)
         pass
 
@@ -1512,11 +1509,11 @@ def parseListOfScanDatesFile(filename, alphaLabels=False, delim='\t'):
                     print("Exiting")
                     exit(os.EX_USAGE)
         else:
-            print "Input format incorrect"
-            print "I was expecting a delimited file using '%s' with all lines having either 2 or 3 entries"%delim
-            print "But I received:"
-            print "\t%s"%(line)
-            print "Exiting"
+            print("Input format incorrect")
+            print("I was expecting a delimited file using '{0}' with all lines having either 2 or 3 entries".format(delim))
+            print("But I received:")
+            print("\t{0}".format(line))
+            print("Exiting")
             exit(os.EX_USAGE)
             pass
         
@@ -1574,7 +1571,7 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
             if trimPt is not None and trimLine is not None:
                 trimLine = r.TLine(-0.5, trimVcal[vfat], 127.5, trimVcal[vfat])
                 legend.Clear()
-                legend.AddEntry(trimLine, 'trimVCal is %f'%(trimVcal[vfat]))
+                legend.AddEntry(trimLine, 'trimVCal is {0}'.format(trimVcal[vfat]))
                 legend.Draw('SAME')
                 trimLine.SetLineColor(1)
                 trimLine.SetLineWidth(3)

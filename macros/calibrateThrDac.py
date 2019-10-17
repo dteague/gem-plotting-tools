@@ -128,9 +128,6 @@ if __name__ == '__main__':
         debug=args.debug
     )
 
-    print ns
-    print ns.inputFile
-    
     try:
         retCode = calibrateThrDAC(ns)
     except IOError as err:

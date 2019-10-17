@@ -29,11 +29,11 @@ if __name__ == "__main__":
 
     import os
     if (args.slot < 1 or args.slot > 12):
-        print "Please specify a valid AMC [1,12]"
+        print("Please specify a valid AMC [1,12]")
         exit(os.EX_USAGE)
 
     if (args.ohMask < 0x0 or args.ohMask > 0xfff):
-        print "Please specify a valid ohMask [0x0,0xfff]"
+        print("Please specify a valid ohMask [0x0,0xfff]")
         exit(os.EX_USAGE)
 
     from gempython.utils.wrappers import envCheck
@@ -62,13 +62,13 @@ if __name__ == "__main__":
     print("Opening input file: {0}".format(args.infile))
     infile = r.TFile(args.infile,"READ")
     if not infile:
-        print infilename,"does not exist"
+        print("{0} does not exist".format(infilename))
         exit(os.EX_IOERR)
     if infile.IsZombie():
-        print infilename,"is a zombie"
+        print("{0} is a zombie".format(infilename))
         exit(os.EX_IOERR)
     if not infile.IsOpen():
-        print infilename,"is not open"
+        print("{0} is not open".format(infilename))
         exit(os.EX_IOERR)
         pass
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # Make nested containers
     from gempython.utils.nesteddict import nesteddict as ndict
     baseDir = ndict() # baseDir[slot][oh] -> string
-    vfatDirs = ["VFAT-%d"%x for x in range(vfatsPerGemVariant[gemType])]
+    vfatDirs = ["VFAT-{0}".format(x) for x in range(vfatsPerGemVariant[gemType])]
 
     allVFATsLatency = ndict()   #   allVFATsLatency[slot][oh]      -> histogram
     dictMapping = ndict()       #   dictMapping[slot][oh]          -> mapping dict
@@ -105,8 +105,8 @@ if __name__ == "__main__":
         try:
             mapFile = open(args.mapping, 'r')
         except IOError as e:
-            print "Exception:", e
-            print "Failed to open: '%s'"%mappingFileName
+            print("Exception:", e)
+            print("Failed to open: '{0}'".format(mappingFileName))
         else:
             listMapData = mapFile.readlines()
         finally:
@@ -138,7 +138,7 @@ if __name__ == "__main__":
             continue
 
         # Make base directory
-        baseDir[args.slot][oh] = "AMC13-%d/AMC-%d/GEB-%d/"%(args.amc13,args.slot,oh)
+        baseDir[args.slot][oh] = "AMC13-{0}/AMC-{1}/GEB-{2}/".format(args.amc13, args.slot, oh)
     
         # Check to make sure this AMC13 & AMC exist in the file
         currentDir = infile.GetDirectory(baseDir[args.slot][oh])
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         # Get Distributions from File
         for vfat,path in enumerate(vfatDirs):
             # Load Dist
-            print baseDir[args.slot][oh]+path+"/n_hits_per_event"
+            print(baseDir[args.slot][oh]+path+"/n_hits_per_event")
             vfatHitMulti[args.slot][oh][vfat] = infile.Get(baseDir[args.slot][oh]+path+"/n_hits_per_event") 
             vfatLatHists[args.slot][oh][vfat] = infile.Get(baseDir[args.slot][oh]+path+"/latencyScan")
             vfatLatHists2D[args.slot][oh][vfat] = infile.Get(baseDir[args.slot][oh]+path+"/latencyScan2D")
@@ -234,7 +234,7 @@ if __name__ == "__main__":
             if vfatLatHists[args.slot][oh][vfat]:
                 latMean = vfatLatHists[args.slot][oh][vfat].GetMean()
                 latRMS  = vfatLatHists[args.slot][oh][vfat].GetRMS()
-                print "AMC%i OH%i VFAT%i - %2.4f %2.4f"%(args.slot,oh,vfat,latMean,latRMS)
+                print("AMC{0} OH{1} VFAT{2} - {3:2.4f} {4:2.4f}".format(args.slot,oh,vfat,latMean,latRMS))
                 latencyMean[args.slot][oh].Fill(latMean)
                 latencyRMS[args.slot][oh].Fill(latRMS)
                 if not allVFATsLatency[args.slot][oh]:

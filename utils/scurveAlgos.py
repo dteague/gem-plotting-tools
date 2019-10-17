@@ -239,32 +239,32 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     yMin_Charge,
                     yMax_Charge)
             vSummaryPlots[vfat].GetYaxis().SetTitleOffset(1.5)
-            vSummaryPlotsNoMaskedChan[vfat] = r.TH2D('vSummaryPlotsNoMaskedChan%i'%vfat,
+            vSummaryPlotsNoMaskedChan[vfat] = r.TH2D('vSummaryPlotsNoMaskedChan{0}'.format(vfat),
                     'VFAT {0}: chipID {1};{2};{3} #left(fC#right)'.format(vfat,chipID,stripChanOrPinName[1],dacName),
                     128,-0.5,127.5,256,
                     yMin_Charge,
                     yMax_Charge)
             vSummaryPlotsNoMaskedChan[vfat].GetYaxis().SetTitleOffset(1.5)
         else:
-            vSummaryPlots[vfat] = r.TH2D('vSummaryPlots%i'%vfat,
+            vSummaryPlots[vfat] = r.TH2D('vSummaryPlots{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [0-63];63 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
                     64,-0.5,63.5,256,
                     yMin_Charge,
                     yMax_Charge)
             vSummaryPlots[vfat].GetYaxis().SetTitleOffset(1.5)
-            vSummaryPlotsNoMaskedChan[vfat] = r.TH2D('vSummaryPlotsNoMaskedChan%i'%vfat,
+            vSummaryPlotsNoMaskedChan[vfat] = r.TH2D('vSummaryPlotsNoMaskedChan{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [0-63];63 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
                     64,-0.5,63.5,256,
                     yMin_Charge,
                     yMax_Charge)
             vSummaryPlotsNoMaskedChan[vfat].GetYaxis().SetTitleOffset(1.5)
-            vSummaryPlotsPanPin2[vfat] = r.TH2D('vSummaryPlotsPanPin2_%i'%vfat,
+            vSummaryPlotsPanPin2[vfat] = r.TH2D('vSummaryPlotsPanPin2_{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [64-127];127 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
                     64,-0.5,63.5,256,
                     yMin_Charge,
                     yMax_Charge)
             vSummaryPlotsPanPin2[vfat].GetYaxis().SetTitleOffset(1.5)
-            vSummaryPlotsNoMaskedChanPanPin2[vfat] = r.TH2D('vSummaryPlotsNoMaskedChanPanPin2_%i'%vfat,
+            vSummaryPlotsNoMaskedChanPanPin2[vfat] = r.TH2D('vSummaryPlotsNoMaskedChanPanPin2_{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [64-127];127 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
                     64,-0.5,63.5,256,
                     yMin_Charge,
@@ -373,7 +373,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
 
             for chan in range(0,128):
                 fitSummary.write(
-                        '%i\t%i\t%i\t%f\t%f\t%f\t%f\n'%(
+                        '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
                             vfat,
                             dict_vfatID[vfat],
                             chan,
@@ -391,8 +391,8 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         masks = {}
         reason4Mask = {}
         effectivePedestals = [ np.zeros(128) for vfat in range(vfatsPerGemVariant[gemType]) ]
-        print "| vfatN | Dead Chan | Hot Chan | Failed Fits | High Noise | High Eff Ped |"
-        print "| :---: | :-------: | :------: | :---------: | :--------: | :----------: |"
+        print("| vfatN | Dead Chan | Hot Chan | Failed Fits | High Noise | High Eff Ped |")
+        print("| :---: | :-------: | :------: | :---------: | :--------: | :----------: |")
         for vfat in range(vfatsPerGemVariant[gemType]):
             # If provided, skip all VFATs but the requested one
             if ((vfatList is not None) and (vfat not in vfatList)):
@@ -444,13 +444,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 pass
             reason4Mask[vfat] = reason
             masks[vfat] = ((reason != MaskReason.NotMasked) * (reason != MaskReason.DeadChannel))
-            print '| %5i | %9i | %8i | %11i | %10i | %12i |'%(
+            print('| {0:5d} | {1:9d} | {2:8d} | {3:11d} | {4:10d} | {5:12d} |'.format(
                     vfat,
                     nDeadChan,
                     np.count_nonzero(hot),
                     np.count_nonzero(fitFailed),
                     np.count_nonzero(channelNoise > args.highNoiseCut),
-                    nHighEffPed)
+                    nHighEffPed))
             pass
         
         # Make Distributions w/o Hot Channels
@@ -607,7 +607,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 # Set TObjects linked to TBranches
                 holder_curve = fitter.scanHistos[vfat][chan]
                 holder_curve.Copy(scurve_h)
-                holder_fit = fitter.getFunc(vfat,chan).Clone('scurveFit_vfat%i_chan%i'%(vfat,chan))
+                holder_fit = fitter.getFunc(vfat,chan).Clone('scurveFit_vfat{0}_chan{1}'.format(vfat,chan))
                 holder_fit.Copy(scurve_fit)
                 
                 # Filling the arrays for plotting later
@@ -618,7 +618,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                         scurve_h.Draw()
                         scurve_fit.Draw('SAME')
                         canvas.Update()
-                        canvas.SaveAs('Fit_Overlay_vfat%i_vfatCH%i.png'%(VFAT, chan))
+                        canvas.SaveAs('Fit_Overlay_vfat{0}_vfatCH{1}.png'.format(VFAT, chan))
                         pass
                     pass
                 scurveFitTree.Fill()
@@ -632,7 +632,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     np.zeros(128),
                     allENC[(vfat*128):((vfat+1)*128)]
                     )
-            fitSummaryPlots[vfat].SetTitle("VFAT %i Fit Summary;Channel;Threshold #left(fC#right)"%vfat)
+            fitSummaryPlots[vfat].SetTitle("VFAT {0} Fit Summary;Channel;Threshold #left(fC#right)".format(vfat))
             
             if not (args.channels or args.PanPin):
                 fitSummaryPlots[vfat].GetXaxis().SetTitle("Strip")
@@ -641,13 +641,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 fitSummaryPlots[vfat].GetXaxis().SetTitle("Panasonic Pin")
                 pass
             
-            fitSummaryPlots[vfat].SetName("gFitSummary_VFAT%i"%(vfat))
+            fitSummaryPlots[vfat].SetName("gFitSummary_VFAT{0}".format(vfat))
             fitSummaryPlots[vfat].SetMarkerStyle(2)
             
             # Make thresh summary plot - bin size is variable
             thisVFAT_ThreshMean = np.mean(allThresh[(vfat*128):((vfat+1)*128)])
             thisVFAT_ThreshStd = np.std(allThresh[(vfat*128):((vfat+1)*128)])
-            histThresh = r.TH1F("scurveMean_vfat%i"%vfat,"VFAT %i;S-Curve Mean #left(fC#right);N"%vfat,
+            histThresh = r.TH1F("scurveMean_vfat{0}".format(vfat),"VFAT {0};S-Curve Mean #left(fC#right);N".format(vfat),
                                 40, thisVFAT_ThreshMean - 5. * thisVFAT_ThreshStd, thisVFAT_ThreshMean + 5. * thisVFAT_ThreshStd )
             histThresh.Sumw2()
             if thisVFAT_ThreshStd != 0: # Don't fill if we still at initial values
@@ -659,13 +659,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     pass
                 pass
             gThresh = r.TGraphErrors(histThresh)
-            gThresh.SetName("gScurveMeanDist_vfat%i"%vfat)
+            gThresh.SetName("gScurveMeanDist_vfat{0}".format(vfat))
             gThresh.GetXaxis().SetTitle("scurve mean pos #left(fC#right)")
-            gThresh.GetYaxis().SetTitle("Entries / %f fC"%(thisVFAT_ThreshStd/4.))
+            gThresh.GetYaxis().SetTitle("Entries / {0} fC".format(thisVFAT_ThreshStd/4.))
             threshSummaryPlots[vfat] = gThresh
 
             # Make effective pedestal summary plot - bin size is fixed
-            histEffPed = r.TH1F("scurveEffPed_vfat%i"%vfat,"VFAT %i;S-Curve Effective Pedestal #left(N#right);N"%vfat,
+            histEffPed = r.TH1F("scurveEffPed_vfat{0}".format(vfat),"VFAT {0};S-Curve Effective Pedestal #left(N#right);N".format(vfat),
                                 nPulses+1, -0.5, nPulses+0.5)
             histEffPed.Sumw2()
             for effPed in allEffPed[(vfat*128):((vfat+1)*128)]:
@@ -683,7 +683,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             # Make enc summary plot bin size is variable
             thisVFAT_ENCMean = np.mean(allENC[(vfat*128):((vfat+1)*128)])
             thisVFAT_ENCStd = np.std(allENC[(vfat*128):((vfat+1)*128)])
-            histENC = r.TH1F("scurveSigma_vfat%i"%vfat,"VFAT %i;S-Curve Sigma #left(fC#right);N"%vfat,
+            histENC = r.TH1F("scurveSigma_vfat{0}".format(vfat),"VFAT {0};S-Curve Sigma #left(fC#right);N".format(vfat),
                                 40, thisVFAT_ENCMean - 5. * thisVFAT_ENCStd, thisVFAT_ENCMean + 5. * thisVFAT_ENCStd )
             histENC.Sumw2()
             if thisVFAT_ENCStd != 0: # Don't fill if we are still at initial values
@@ -695,9 +695,9 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     pass
                 pass
             gENC = r.TGraphErrors(histENC)
-            gENC.SetName("gScurveSigmaDist_vfat%i"%vfat)
+            gENC.SetName("gScurveSigmaDist_vfat{0}".format(vfat))
             gENC.GetXaxis().SetTitle("scurve sigma #left(fC#right)")
-            gENC.GetYaxis().SetTitle("Entries / %f fC"%(thisVFAT_ENCStd/4.))
+            gENC.GetYaxis().SetTitle("Entries / {0} fC".format(thisVFAT_ENCStd/4.))
             encSummaryPlots[vfat] = gENC
             pass
   
@@ -710,11 +710,11 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             hDetThresh_All.Fill(thresh)
             pass
         hDetThresh_All.GetXaxis().SetTitle("scurve mean pos #left(fC#right)")
-        hDetThresh_All.GetYaxis().SetTitle("Entries / %f fC"%(detThresh_Std/10.))
+        hDetThresh_All.GetYaxis().SetTitle("Entries / {0} fC".format(detThresh_Std/10.))
         gDetThresh_All = r.TGraphErrors(hDetThresh_All)
         gDetThresh_All.SetName("gScurveMeanDist_All")
         gDetThresh_All.GetXaxis().SetTitle("scurve mean pos #left(fC#right)")
-        gDetThresh_All.GetYaxis().SetTitle("Entries / %f fC"%(detThresh_Std/10.))
+        gDetThresh_All.GetYaxis().SetTitle("Entries / {0} fC".format(detThresh_Std/10.))
 
         # Make a thresh map dist for the entire detector
         from gempython.gemplotting.utils.anautilities import get2DMapOfDetector
@@ -753,11 +753,11 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             hDetENC_All.Fill(enc)
             pass
         hDetENC_All.GetXaxis().SetTitle("scurve sigma #left(fC#right)")
-        hDetENC_All.GetYaxis().SetTitle("Entries / %f fC"%(detENC_Std/10.))
+        hDetENC_All.GetYaxis().SetTitle("Entries / {0} fC".format(detENC_Std/10.))
         gDetENC_All = r.TGraphErrors(hDetENC_All)
         gDetENC_All.SetName("gScurveSigmaDist_All")
         gDetENC_All.GetXaxis().SetTitle("scurve sigma #left(fC#right)")
-        gDetENC_All.GetYaxis().SetTitle("Entries / %f fC"%(detENC_Std/10.))
+        gDetENC_All.GetYaxis().SetTitle("Entries / {0} fC".format(detENC_Std/10.))
         
         # Make a ENC map dist for the entire detector
         hDetMapENC = get2DMapOfDetector(dict_vfatChanLUT, allENC, stripChanOrPinType, "noise", gemType=gemType)
@@ -771,8 +771,8 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             ietaThresh_Std = np.std(allThreshByiEta[ieta][allThreshByiEta[ieta] != 0])
 
             hThresh_iEta = r.TH1F(
-                    "hScurveMeanDist_ieta%i"%(ieta),
-                    "i#eta=%i;S-Curve Mean #left(fC#right);N"%(ieta),
+                    "hScurveMeanDist_ieta{0}".format(ieta),
+                    "i#eta={0};S-Curve Mean #left(fC#right);N".format(ieta),
                     80, 
                     ietaThresh_Mean - 5. * ietaThresh_Std, 
                     ietaThresh_Mean + 5. * ietaThresh_Std )
@@ -781,15 +781,15 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 hThresh_iEta.Fill(thresh)
                 pass
             gThresh_iEta = r.TGraphErrors(hThresh_iEta)
-            gThresh_iEta.SetName("gScurveMeanDist_ieta%i"%(ieta))
+            gThresh_iEta.SetName("gScurveMeanDist_ieta{0}".format(ieta))
             gThresh_iEta.GetXaxis().SetTitle("scurve mean pos #left(fC#right)")
-            gThresh_iEta.GetYaxis().SetTitle("Entries / %f fC"%(ietaThresh_Std/8.))
+            gThresh_iEta.GetYaxis().SetTitle("Entries / {0} fC".format(ietaThresh_Std/8.))
             threshSummaryPlotsByiEta[ieta] = gThresh_iEta
 
             # S-curve effective pedestal
             hEffPed_iEta = r.TH1F(
-                    "hScurveEffPedDist_ieta%i"%(ieta),
-                    "i#eta=%i;S-Curve Effective Pedestal #left(N#right);N"%(ieta),
+                    "hScurveEffPedDist_ieta{0}".format(ieta),
+                    "i#eta={0};S-Curve Effective Pedestal #left(N#right);N".format(ieta),
                      nPulses+1, -0.5, nPulses+0.5)
             
             for effPed in allEffPedByiEta[ieta][allEffPedByiEta[ieta] > -1]:
@@ -805,8 +805,8 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             ietaENC_Std = np.std(allENCByiEta[ieta][allENCByiEta[ieta] != 0])
 
             hENC_iEta = r.TH1F(
-                    "hScurveSigmaDist_ieta%i"%(ieta),
-                    "i#eta=%i;S-Curve Sigma #left(fC#right);N"%(ieta),
+                    "hScurveSigmaDist_ieta{0}".format(ieta),
+                    "i#eta={0};S-Curve Sigma #left(fC#right);N".format(ieta),
                     80, 
                     ietaENC_Mean - 5. * ietaENC_Std, 
                     ietaENC_Mean + 5. * ietaENC_Std )
@@ -815,9 +815,9 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 hENC_iEta.Fill(enc)
                 pass
             gENC_iEta = r.TGraphErrors(hENC_iEta)
-            gENC_iEta.SetName("gScurveSigmaDist_ieta%i"%(ieta))
+            gENC_iEta.SetName("gScurveSigmaDist_ieta{0}".format(ieta))
             gENC_iEta.GetXaxis().SetTitle("scurve sigma pos #left(fC#right)")
-            gENC_iEta.GetYaxis().SetTitle("Entries / %f fC"%(ietaENC_Std/8.))
+            gENC_iEta.GetYaxis().SetTitle("Entries / {0} fC".format(ietaENC_Std/8.))
             encSummaryPlotsByiEta[ieta] = gENC_iEta
             pass
         pass # end if performFit
@@ -825,19 +825,19 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     # Save the summary plots and channel config file
     from gempython.gemplotting.utils.anautilities import getSummaryCanvas, getSummaryCanvasByiEta
     if args.PanPin:
-        getSummaryCanvas(vSummaryPlots, vSummaryPlotsPanPin2, '%s/Summary.png'%outputDir, gemType=gemType, write2Disk=True) 
+        getSummaryCanvas(vSummaryPlots, vSummaryPlotsPanPin2, '{0}/Summary.png'.format(outputDir), gemType=gemType, write2Disk=True) 
     else: 
-        getSummaryCanvas(vSummaryPlots, None, '%s/Summary.png'%outputDir, gemType=gemType, write2Disk=True)
+        getSummaryCanvas(vSummaryPlots, None, '{0}/Summary.png'.format(outputDir), gemType=gemType, write2Disk=True)
 
     if performFit:
         if args.PanPin:
-            getSummaryCanvas(vSummaryPlotsNoMaskedChan, vSummaryPlotsNoMaskedChanPanPin2, '%s/PrunedSummary.png'%outputDir, gemType=gemType, write2Disk=True)
+            getSummaryCanvas(vSummaryPlotsNoMaskedChan, vSummaryPlotsNoMaskedChanPanPin2, '{0}/PrunedSummary.png'.format(outputDir), gemType=gemType, write2Disk=True)
         else:
-            getSummaryCanvas(vSummaryPlotsNoMaskedChan, None, '%s/PrunedSummary.png'%outputDir, gemType=gemType, write2Disk=True)
-        getSummaryCanvas(fitSummaryPlots, None, '%s/fitSummary.png'%outputDir, None, drawOpt="APE1", gemType=gemType, write2Disk=True)
-        getSummaryCanvas(threshSummaryPlots, None, '%s/ScurveMeanSummary.png'%outputDir, None, drawOpt="AP", gemType=gemType, write2Disk=True)
-        getSummaryCanvas(effPedSummaryPlots, None, '%s/ScurveEffPedSummary.png'%outputDir, None, drawOpt="E1", gemType=gemType, write2Disk=True)
-        getSummaryCanvas(encSummaryPlots, None, '%s/ScurveSigmaSummary.png'%outputDir, None, drawOpt="AP", gemType=gemType, write2Disk=True)
+            getSummaryCanvas(vSummaryPlotsNoMaskedChan, None, '{0}/PrunedSummary.png'.format(outputDir), gemType=gemType, write2Disk=True)
+        getSummaryCanvas(fitSummaryPlots, None, '{0}/fitSummary.png'.format(outputDir), None, drawOpt="APE1", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(threshSummaryPlots, None, '{0}/ScurveMeanSummary.png'.format(outputDir), None, drawOpt="AP", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(effPedSummaryPlots, None, '{0}/ScurveEffPedSummary.png'.format(outputDir), None, drawOpt="E1", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(encSummaryPlots, None, '{0}/ScurveSigmaSummary.png'.format(outputDir), None, drawOpt="AP", gemType=gemType, write2Disk=True)
         
         #BoxPlot
         try:
@@ -858,7 +858,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         h2DetThresh_All.SetFillColor(400)
         h2DetThresh_All.Draw("candle1")
         canvasBoxPlot_Thresh.Update()
-        canvasBoxPlot_Thresh.SaveAs("%s/h2ScurveMeanDist_All.png"%(outputDir))
+        canvasBoxPlot_Thresh.SaveAs("{0}/h2ScurveMeanDist_All.png".format(outputDir))
         canvasBoxPlot_Thresh.Close()
 
         canvasBoxPlot_EffPed = r.TCanvas("h2EffPed","h2EffPed",0,0,1200,1000)
@@ -869,7 +869,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         h2DetEffPed_All.SetFillColor(400)
         h2DetEffPed_All.Draw("candle1")
         canvasBoxPlot_EffPed.Update()
-        canvasBoxPlot_EffPed.SaveAs("%s/h2ScurveEffPedDist_All.png"%(outputDir))
+        canvasBoxPlot_EffPed.SaveAs("{0}/h2ScurveEffPedDist_All.png".format(outputDir))
         canvasBoxPlot_EffPed.Close()
         
         canvasBoxPlot_ENC = r.TCanvas("h2ENC","h2ENC",0,0,1200,1000)
@@ -880,14 +880,14 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         h2DetENC_All.Draw("candle1")
         # h2DetENC_All.Draw("colz")
         canvasBoxPlot_ENC.Update()
-        canvasBoxPlot_ENC.SaveAs("%s/h2ScurveSigmaDist_All.png"%(outputDir))
+        canvasBoxPlot_ENC.SaveAs("{0}/h2ScurveSigmaDist_All.png".format(outputDir))
         canvasBoxPlot_ENC.Close()
 
 
         
-        getSummaryCanvasByiEta(threshSummaryPlotsByiEta, name='%s/ScurveMeanSummaryByiEta.png'%outputDir, drawOpt="AP", gemType=gemType, write2Disk=True)
-        getSummaryCanvasByiEta(effPedSummaryPlotsByiEta, name='%s/ScurveEffPedSummaryByiEta.png'%outputDir, drawOpt="E1", gemType=gemType, write2Disk=True)
-        getSummaryCanvasByiEta(encSummaryPlotsByiEta, name='%s/ScurveSigmaSummaryByiEta.png'%outputDir, drawOpt="AP", gemType=gemType, write2Disk=True)
+        getSummaryCanvasByiEta(threshSummaryPlotsByiEta, name='{0}/ScurveMeanSummaryByiEta.png'.format(outputDir), drawOpt="AP", gemType=gemType, write2Disk=True)
+        getSummaryCanvasByiEta(effPedSummaryPlotsByiEta, name='{0}/ScurveEffPedSummaryByiEta.png'.format(outputDir), drawOpt="E1", gemType=gemType, write2Disk=True)
+        getSummaryCanvasByiEta(encSummaryPlotsByiEta, name='{0}/ScurveSigmaSummaryByiEta.png'.format(outputDir), drawOpt="AP", gemType=gemType, write2Disk=True)
 
         confF = open(outputDir+'/chConfig.txt','w')
         if isVFAT3:
@@ -898,7 +898,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     continue
 
                 for chan in range(0, 128):
-                    confF.write('%i\t%i\t%i\t%i\t%i\t%i\t%i\n'%(
+                    confF.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
                         vfat,
                         dict_vfatID[vfat],
                         chan,
@@ -914,7 +914,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     continue
 
                 for chan in range (0, 128):
-                    confF.write('%i\t%i\t%i\t%i\t%i\t%i\n'%(
+                    confF.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
                         vfat,
                         dict_vfatID[vfat],
                         chan,
@@ -943,7 +943,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             if ((vfatList is not None) and (vfat not in vfatList)):
                 continue
 
-            canvOfScurveFits[vfat] = r.TCanvas("canv_scurveFits_vfat%i"%vfat,"Scurve Fits from VFAT%i"%vfat,600,600)
+            canvOfScurveFits[vfat] = r.TCanvas("canv_scurveFits_vfat{0}".format(vfat),"Scurve Fits from VFAT{0}".format(vfat),600,600)
             canvOfScurveFits[vfat].cd()
             for chan in range (0,128):
                 if masks[vfat][chan]: # Do not draw fit for masked channels
@@ -964,7 +964,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         if ((vfatList is not None) and (vfat not in vfatList)):
             continue
 
-        dirVFAT = outF.mkdir("VFAT%i"%vfat)
+        dirVFAT = outF.mkdir("VFAT{0}".format(vfat))
         dirVFAT.cd()
         vSummaryPlots[vfat].Write()
         if args.PanPin:
@@ -1001,7 +1001,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         hDetMapENC.Write()
 
         for ieta in range(1,maxiEta+1):
-            dir_iEta = dirSummary.mkdir("ieta%i"%ieta)
+            dir_iEta = dirSummary.mkdir("ieta{0}".format(ieta))
             dir_iEta.cd()
             threshSummaryPlotsByiEta[ieta].Write()
             effPedSummaryPlotsByiEta[ieta].Write()
@@ -1046,8 +1046,8 @@ def fill2DScurveSummaryPlots(scurveTree, vfatHistos, vfatChanLUT, vfatHistosPanP
 
     # Check if lutType is expected
     if lutType not in mappingNames:
-        print "fill2DScurveSummaryPlots() - lutType '%s' not supported"
-        print "fill2DScurveSummaryPlots() - I was expecting one of the following: ", mappingNames
+        print("fill2DScurveSummaryPlots() - lutType '{0}' not supported".format{lutType})
+        print("fill2DScurveSummaryPlots() - I was expecting one of the following: ", mappingNames)
         raise LookupError
 
     # Set calDAC2Q slope to unity if not provided
@@ -1127,11 +1127,11 @@ def plotAllSCurvesOnCanvas(vfatHistos, vfatHistosPanPin2=None, obsName="scurves"
     canv_dict = {}
 
     for vfat,histo in vfatHistos.iteritems():
-        canv_dict[vfat] = r.TCanvas("canv_%s_vfat%i"%(obsName,vfat),"%s from VFAT%i"%(obsName,vfat),600,600)
+        canv_dict[vfat] = r.TCanvas("canv_{0}_vfat{1}".format(obsName,vfat),"{0} from VFAT{1}".format(obsName,vfat),600,600)
         canv_dict[vfat].Draw()
         canv_dict[vfat].cd()
         for binX in range(1,histo.GetNbinsX()+1):
-            h_scurve = histo.ProjectionY("h_%s_vfat%i_bin%i"%(obsName,vfat,binX),binX,binX,"")
+            h_scurve = histo.ProjectionY("h_{0}_vfat{1}_bin{2}".format(obsName,vfat,binX),binX,binX,"")
             h_scurve.SetLineColor(r.kBlue+2)
             h_scurve.SetLineWidth(2)
             h_scurve.SetFillStyle(0)
@@ -1146,7 +1146,7 @@ def plotAllSCurvesOnCanvas(vfatHistos, vfatHistosPanPin2=None, obsName="scurves"
         for vfat,histo in vfatHistosPanPin2.iteritems():
             canv_dict[vfat].cd()
             for binX in range(1,histo.GetNbinsX()+1):
-                h_scurve = histo.ProjectionY("h_%s_vfat%i_bin%i"%(obsName,vfat,binX),binX,binX,"")
+                h_scurve = histo.ProjectionY("h_{0}_vfat{1}_bin{2}".format(obsName,vfat,binX),binX,binX,"")
                 h_scurve.SetLineColor(r.kBlue+2)
                 h_scurve.SetLineWidth(2)
                 h_scurve.SetFillStyle(0)

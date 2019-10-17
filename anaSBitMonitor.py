@@ -20,7 +20,6 @@ if __name__ == '__main__':
     filename = args.infilename[:-5]
     os.system("mkdir " + args.infilename[:-5])
 
-    print filename
     outfilename = args.outfilename
 
     import ROOT as r
