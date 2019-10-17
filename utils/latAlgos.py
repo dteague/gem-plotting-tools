@@ -242,10 +242,10 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         grMaxLatBinByVFAT.SetPointError(vfat, 0, 0.5) #could be improved upon
 
         # Initialize
-        dict_fitNHitsVFAT_Sig[vfat] = r.TF1("func_N_vs_Lat_VFAT%i_Sig"%vfat,"[0]",latFitMin_Sig,latFitMax_Sig)
-        dict_fitNHitsVFAT_Noise[vfat] = r.TF1("func_N_vs_Lat_VFAT%i_Noise"%vfat,"[0]",latMin,latMax)
+        dict_fitNHitsVFAT_Sig[vfat] = r.TF1("func_N_vs_Lat_VFAT{0}_Sig".format(vfat),"[0]",latFitMin_Sig,latFitMax_Sig)
+        dict_fitNHitsVFAT_Noise[vfat] = r.TF1("func_N_vs_Lat_VFAT{0}_Noise".format(vfat),"[0]",latMin,latMax)
         dict_grNHitsVFAT[vfat] = r.TGraphAsymmErrors(dict_hVFATHitsVsLat[vfat])
-        dict_grNHitsVFAT[vfat].SetName("g_N_vs_Lat_VFAT%i"%vfat)
+        dict_grNHitsVFAT[vfat].SetName("g_N_vs_Lat_VFAT{0}".format(vfat))
 
         # Fitting
         if performFit:
@@ -257,7 +257,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
             # Remove Signal Region
             latVal = r.Double()
             hitVal = r.Double()
-            gTempDist = dict_grNHitsVFAT[vfat].Clone("g_N_vs_Lat_VFAT%i_NoSig"%vfat)
+            gTempDist = dict_grNHitsVFAT[vfat].Clone("g_N_vs_Lat_VFAT{0}_NoSig".format(vfat))
             for idx in range(dict_grNHitsVFAT[vfat].GetN()-1,0,-1):
                 gTempDist.GetPoint(idx,latVal,hitVal)
                 if latFitMin_Noise < latVal and latVal < latFitMax_Noise:
@@ -286,7 +286,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
 
             # Print if requested
             if debug:
-                print("%i\t%f\t%f"%(vfat, hitCountSig[0], SigOverBkg[0]))
+                print("{0}\t{1}\t{2}".format(vfat, hitCountSig[0], SigOverBkg[0]))
             pass
 
         # Format
@@ -300,7 +300,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
         dict_grNHitsVFAT[vfat].GetYaxis().SetTitle("N")
 
         # Write
-        dirVFAT = dirVFATPlots.mkdir("VFAT%i"%vfat)
+        dirVFAT = dirVFATPlots.mkdir("VFAT{0}".format(vfat))
         dirVFAT.cd()
         dict_grNHitsVFAT[vfat].Write()
         dict_hVFATHitsVsLat[vfat].Write()

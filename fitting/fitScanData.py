@@ -165,14 +165,14 @@ class ScanDataFitter(DeadChannelFinder):
             for ch in range(0,128):
                 self.scanCount[vfat][ch] = 0
                 if self.isVFAT3:
-                    self.scanFuncs[vfat][ch] = r.TF1('scurveFit_vfat%i_chan%i'%(vfat,ch),'[3]*TMath::Erf((TMath::Max([2],x)-[0])/(TMath::Sqrt(2)*[1]))+[3]',
+                    self.scanFuncs[vfat][ch] = r.TF1('scurveFit_vfat{0}_chan{1}'.format(vfat,ch),'[3]*TMath::Erf((TMath::Max([2],x)-[0])/(TMath::Sqrt(2)*[1]))+[3]',
                             self.calDAC2Q_m[vfat]*253+self.calDAC2Q_b[vfat],self.calDAC2Q_m[vfat]*1+self.calDAC2Q_b[vfat])
-                    self.scanHistos[vfat][ch] = r.TH1D('scurve_vfat%i_chan%i_h'%(vfat,ch),'scurve_vfat%i_chan%i_h'%(vfat,ch),
+                    self.scanHistos[vfat][ch] = r.TH1D('scurve_vfat{0}_chan{1}_h'.format(vfat,ch),'scurve_vfat{0}_chan{1}_h'.format(vfat,ch),
                             254,self.calDAC2Q_m[vfat]*254.5+self.calDAC2Q_b[vfat],self.calDAC2Q_m[vfat]*0.5+self.calDAC2Q_b[vfat])
                 else:
-                    self.scanFuncs[vfat][ch] = r.TF1('scurveFit_vfat%i_chan%i'%(vfat,ch),'[3]*TMath::Erf((TMath::Max([2],x)-[0])/(TMath::Sqrt(2)*[1]))+[3]',
+                    self.scanFuncs[vfat][ch] = r.TF1('scurveFit_vfat{0}_chan{1}'.format(vfat,ch),'[3]*TMath::Erf((TMath::Max([2],x)-[0])/(TMath::Sqrt(2)*[1]))+[3]',
                             self.calDAC2Q_m[vfat]*1+self.calDAC2Q_b[vfat],self.calDAC2Q_m[vfat]*253+self.calDAC2Q_b[vfat])
-                    self.scanHistos[vfat][ch] = r.TH1D('scurve_vfat%i_chan%i_h'%(vfat,ch),'scurve_vfat%i_chan%i_h'%(vfat,ch),
+                    self.scanHistos[vfat][ch] = r.TH1D('scurve_vfat{0}_chan{1}_h'.format(vfat,ch),'scurve_vfat{0}_chan{1}_h'.format(vfat,ch),
                             254,self.calDAC2Q_m[vfat]*0.5+self.calDAC2Q_b[vfat],self.calDAC2Q_m[vfat]*254.5+self.calDAC2Q_b[vfat])
                     pass
                 self.scanHistosChargeBins[vfat][ch] = [self.scanHistos[vfat][ch].GetXaxis().GetBinLowEdge(binX) for binX in range(1,self.scanHistos[vfat][ch].GetNbinsX()+2) ] #Include overflow
@@ -257,11 +257,11 @@ class ScanDataFitter(DeadChannelFinder):
             fitTF1.SetLineColor(r.kBlack)
             
             if not debug:
-                print 'fitting vfat %i'%(vfat)
+                print('fitting vfat {0}'.format(vfat))
 
             for ch in range(0,128):
                 if debug:
-                    print 'fitting vfat %i chan %i'%(vfat,ch)
+                    print('fitting vfat {0} chan {1}'.format(vfat,ch))
                 
                 if self.isDead[vfat][ch]:
                     fitTF1.SetLineColor(r.kGray)
@@ -275,8 +275,8 @@ class ScanDataFitter(DeadChannelFinder):
                 stepN = 0
                 
                 if debug:
-                    print "| stepN | vfatN | vfatCH | isVFAT3 | p0_low | p0 | p0_high | p1_low | p1 | p1_high | p2_low | p2 | p2_high |"
-                    print "| ----- | ----- | ------ | ------- | ------ | -- | ------- | ------ | -- | ------- | ------ | -- | ------- |"
+                    print("| stepN | vfatN | vfatCH | isVFAT3 | p0_low | p0 | p0_high | p1_low | p1 | p1_high | p2_low | p2 | p2_high |")
+                    print("| ----- | ----- | ------ | ------- | ------ | -- | ------- | ------ | -- | ------- | ------ | -- | ------- |")
                 while(stepN < 30):
                     #rand = max(0.0, random.Gaus(10, 5)) # do not accept negative numbers
                     rand = abs(random.Gaus(10, 5)) # take positive definite numbers
@@ -314,7 +314,7 @@ class ScanDataFitter(DeadChannelFinder):
                     
                     if debug:
                         if self.isVFAT3:
-                            print "| %i | %i | %i | %i | %f | %f | %f | %f | %f | %f | %f | %f | %f |"%(
+                            print("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} | {8} | {9} | {10} | {11} | {12} |".format(
                                         stepN,
                                         vfat,
                                         ch,
@@ -328,9 +328,9 @@ class ScanDataFitter(DeadChannelFinder):
                                         -0.01,
                                         init_guess_p2,
                                         self.Nev[vfat][ch]
-                                    )
+                                    ))
                         else:
-                            print "| %i | %i | %i | %i | %f | %f | %f | %f | %f | %f | %f | %f | %f |"%(
+                            print("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} | {8} | {9} | {10} | {11} | {12} |".format(
                                         stepN,
                                         vfat,
                                         ch,
@@ -344,8 +344,7 @@ class ScanDataFitter(DeadChannelFinder):
                                         -0.01,
                                         init_guess_p2,
                                         self.Nev[vfat][ch]
-                                    )
-
+                                    ))
                     # Fit
                     fitResult = self.scanHistos[vfat][ch].Fit('myERF','SQ')
                     fitEmpty = fitResult.IsEmpty()
@@ -360,7 +359,7 @@ class ScanDataFitter(DeadChannelFinder):
                     fitNDF = fitTF1.GetNDF()
                     stepN +=1
                     if (fitChi2 < MinChi2Temp and fitChi2 > 0.0):
-                        self.scanFuncs[vfat][ch] = fitTF1.Clone('scurveFit_vfat%i_chan%i_h'%(vfat,ch))
+                        self.scanFuncs[vfat][ch] = fitTF1.Clone('scurveFit_vfat{0}_chan{1}_h'.format(vfat,ch))
                         self.scanFuncs[vfat][ch].SetLineColor(r.kBlue-2)
                         self.scanFitResults[0][vfat][ch] = fitTF1.GetParameter(0)
                         self.scanFitResults[1][vfat][ch] = fitTF1.GetParameter(1)
@@ -376,9 +375,9 @@ class ScanDataFitter(DeadChannelFinder):
                     pass
                 if debug:
                     print("Converged fit results:")
-                    print "| stepN | vfatN | vfatCH | isVFAT3 | p0 | p1 | p2 | Chi2 | NDF | NormChi2 |"
-                    print "| :---: | :---: | :----: | :-----: | :-: | :-: | :-: | :--: | :-: | :------: |"
-                    print "| %i | %i | %i | %i | %f | %f | %f | %f | %i | %f |"%(
+                    print("| stepN | vfatN | vfatCH | isVFAT3 | p0 | p1 | p2 | Chi2 | NDF | NormChi2 |")
+                    print("| :---: | :---: | :----: | :-----: | :-: | :-: | :-: | :--: | :-: | :------: |")
+                    print("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} | {8} | {9} |".format(
                             stepN,
                             vfat,
                             ch,
@@ -388,7 +387,7 @@ class ScanDataFitter(DeadChannelFinder):
                             self.scanFitResults[2][vfat][ch],
                             self.scanFitResults[3][vfat][ch],
                             self.scanFitResults[5][vfat][ch],
-                            self.scanFitResults[3][vfat][ch] / self.scanFitResults[5][vfat][ch])
+                            self.scanFitResults[3][vfat][ch] / self.scanFitResults[5][vfat][ch]))
                     pass
                 pass
             pass

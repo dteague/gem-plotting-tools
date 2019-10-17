@@ -304,7 +304,7 @@ if __name__ == '__main__':
         sys.exit(os.EX_USAGE)
 
     if not os.path.isdir(options.inputDir):
-        print("Error: Not a directory: %s" % options.inputDir)
+        print("Error: Not a directory: {0}".format(options.inputDir))
         sys.exit(os.EX_USAGE)
 
     from gempython.gemplotting.utils.anahistory import (
@@ -327,7 +327,7 @@ if __name__ == '__main__':
         findRangesKwArgs['minNoise'] = options.minNoise
         findRangesKwArgs['maxNoise'] = options.maxNoise
     else:
-        print("Error: Invalid argument for --ranges: %s " % options.ranges)
+        print("Error: Invalid argument for --ranges: {0} ".format(options.ranges))
         sys.exit(os.EX_USAGE)
 
     gemType="ge11"
@@ -390,7 +390,7 @@ if __name__ == '__main__':
     from tabulate import tabulate
 
     headers = [
-        '`%s`' % data.stripOrChanMode,
+        '`{0}`'.format(data.stripOrChanMode),
         'Last known good',
         'Range begins',
         'Range ends',
@@ -400,9 +400,9 @@ if __name__ == '__main__':
         'Other subsequent `maskReason`s' ]
 
     for vfat in range(vfatsPerGemVariant[gemType]):
-        print '''
-## VFAT %d
-''' % vfat
+        print('''
+        ## VFAT {0}
+        '''.format(vfat))
 
         print(tabulate(rangesTables[vfat],
                        headers = headers,

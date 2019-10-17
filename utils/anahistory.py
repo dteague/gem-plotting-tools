@@ -296,32 +296,31 @@ class TimeSeriesData(object):
 
         self.gemType = gemType
         
-        file_mask = r.TFile('%s/gemPlotterOutput_mask_vs_scandate.root' % inputDir, 'READ')
+        file_mask = r.TFile('{0}/gemPlotterOutput_mask_vs_scandate.root'.format(inputDir), 'READ')
         if file_mask.IsZombie():
-            raise IOError('Could not open %s. Is %s the output directory of plotTimeSeries.py?' % (
+            raise IOError('Could not open {0}. Is {1} the output directory of plotTimeSeries.py?'.format(
                 file_mask.GetPath(), inputDir))
 
-        file_maskReason = r.TFile('%s/gemPlotterOutput_maskReason_vs_scandate.root' % inputDir, 'READ')
+        file_maskReason = r.TFile('{0}/gemPlotterOutput_maskReason_vs_scandate.root'.format(inputDir), 'READ')
         if file_maskReason.IsZombie():
-            raise IOError('Could not open %s. Is %s the output directory of plotTimeSeries.py?' % (
+            raise IOError('Could not open {0}. Is {1} the output directory of plotTimeSeries.py?'.format(
                 file_maskReason.GetPath(), inputDir))
 
-        file_noise = r.TFile('%s/gemPlotterOutput_noise_vs_scandate.root' % inputDir, 'READ')
+        file_noise = r.TFile('{0}/gemPlotterOutput_noise_vs_scandate.root'.format(inputDir), 'READ')
         if file_noise.IsZombie():
-            raise IOError('Could not open %s. Is %s the output directory of plotTimeSeries.py?' % (
+            raise IOError('Could not open {0}. Is {1} the output directory of plotTimeSeries.py?'.format(
                 file_noise.GetPath(), inputDir))
 
         # Auto-detect the meaning of stripOrChan
         possibleModes = ['ROBstr', 'vfatCH'] # See gemPlotter.py
         for mode in possibleModes:
-            if file_mask.Get('VFAT0/h_%s_vs_scandate_Obsmask_VFAT0' % mode):
+            if file_mask.Get('VFAT0/h_{0}_vs_scandate_Obsmask_VFAT0'.format(mode)):
                 self.stripOrChanMode = mode
                 break
         else:
             from string import join
             raise RuntimeError(
-                'No key VFAT0/h_<MODE>_vs_scandate_Obsmask_VFAT0 in file %s\nTried MODE=%s. Was the file produced by plotTimeSeries.py?' % (
-                    file_mask.GetPath(), join(possibleModes, ',')))
+                'No key VFAT0/h_<MODE>_vs_scandate_Obsmask_VFAT0 in file {0}\nTried MODE={1}. Was the file produced by plotTimeSeries.py?'.format(file_mask.GetPath(), join(possibleModes, ',')))
         
         self.mask = [] # [vfat][time][stripOrChan]; warning: reordered after loading
         self.maskReason = [] # [vfat][time][stripOrChan]; warning: reordered after loading

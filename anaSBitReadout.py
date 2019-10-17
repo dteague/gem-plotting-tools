@@ -110,7 +110,7 @@ if __name__ == '__main__':
     #from subprocess import call
 
     from gempython.utils.wrappers import runCommand
-    print("Analyzing: '%s'" % path)
+    print("Analyzing: '{0}'".format( path))
     runCommand(["mkdir", "-p", filename])
 
     """
@@ -157,22 +157,22 @@ if __name__ == '__main__':
     # searching for all the files with this format and adding them to the TTree
     import glob
     if args.debug:
-        print ("\nReading .dat files from the folder %s" % path)
+        print("\nReading .dat files from the folder {0}".format(path))
     for idx, file in enumerate(glob.glob(path+'/sbitReadOut_run*.dat')):
         os.system("cat "+file+" | tail -n +2 >> "+path + "catfile.txt")
         os.system("echo" + "" + " >>" + path + "catfile.txt")
     inT.ReadFile(path+"catfile.txt", "evtNum/I:sbitClusterData0/I:sbitClusterData1/I:sbitClusterData2/I:sbitClusterData3/I:sbitClusterData4/I:sbitClusterData5/I:sbitClusterData6/I:sbitClusterData7/I")
     if args.debug:
-        print ("%d input files have been read and added to the TTree" % (idx+1))
+        print("{0} input files have been read and added to the TTree".format(idx+1))
 
     inT.Write()
     if args.debug:
-        print ('TTree written\n')
-        print ("Removing the catfile.txt ...")
+        print('TTree written\n')
+        print("Removing the catfile.txt ...")
     runCommand(["rm", path+"catfile.txt"])
 
     if args.debug:
-        print ("Done\n")
+        print("Done\n")
     """
     Going to build the output tree starting from the previous TTree converted into an array.
     First of all, going to initilize the array which will hold the data
@@ -392,14 +392,14 @@ if __name__ == '__main__':
     canv.SaveAs(filename+'/L1A_DelaySummary.png')
 
     # getSummaryByiEta
-    getSummaryCanvasByiEta(ieta_h_strip, name='%s/ietaStripSummary.png' %
-                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
-    getSummaryCanvasByiEta(ieta_h_ch, name='%s/ietaChanSummary.png' %
-                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
-    getSummaryCanvasByiEta(ieta_h_sbitSize, name='%s/ietaSbitSizeSummary.png' %
-                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
-    getSummaryCanvasByiEta(ieta_h_delay, name='%s/ietaDelaySummary.png' %
-                      filename, trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
+    getSummaryCanvasByiEta(ieta_h_strip, name='{0}/ietaStripSummary.png'.format(filename),
+                           trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
+    getSummaryCanvasByiEta(ieta_h_ch, name='{0}/ietaChanSummary.png'.format(filename),
+                           trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
+    getSummaryCanvasByiEta(ieta_h_sbitSize, name='{0}/ietaSbitSizeSummary.png'.format(filename),
+                           trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
+    getSummaryCanvasByiEta(ieta_h_delay, name='{0}/ietaDelaySummary.png'.format(filename),
+                           trimPt=None, drawOpt="", gemType=gemType, write2Disk=True)
 
     # Making&Filling folders in the TFile
     outF.cd()
@@ -411,7 +411,7 @@ if __name__ == '__main__':
     
     vfatDir.cd()
     for vfat in range(0, vfatsPerGemVariant[gemType]):
-        tempDir = vfatDir.mkdir("VFAT%i" % vfat)
+        tempDir = vfatDir.mkdir("VFAT{0}".format(vfat))
         tempDir.cd()
         vfat_h_strip[vfat].Write()
         vfat_h_ch[vfat].Write()
@@ -420,7 +420,7 @@ if __name__ == '__main__':
 
     ietaDir.cd()
     for ieta in range(1, maxiEta):
-        tempDir = ietaDir.mkdir("iETA%i" % ieta)
+        tempDir = ietaDir.mkdir("iETA{0}".format(ieta))
         tempDir.cd()
         ieta_h_strip[ieta].Write()
         ieta_h_ch[ieta].Write()
@@ -453,9 +453,9 @@ if __name__ == '__main__':
     canv.SaveAs(filename+'/ChvsiEta.png')
 
     outF.Close()
-    print ("\n---Took %f seconds for each .dat file---" %
-           ((time.time() - start_time) / int(idx)))
-    print ("\nGaranting permission to %s..." % filename)
+    print("\n---Took {0} seconds for each .dat file---".format(
+        (time.time() - start_time) / int(idx)))
+    print("\nGaranting permission to {0}...".format(filename))
     runCommand(["chmod", "-R", "770", filename])
-    print ("Data stored in %s" % (filename+'/'+outfilename))
+    print("Data stored in {0}".format(filename+'/'+outfilename))
     print("Bye now")

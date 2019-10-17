@@ -85,7 +85,20 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     import pkg_resources
     MAPPING_PATH = pkg_resources.resource_filename('gempython.gemplotting', 'mapping/')
 
-    print 'Initializing Histograms'
+    from gempython.utils.nesteddict import nesteddict as ndict
+    dict_vfatChanLUT = ndict()
+    from gempython.gemplotting.utils.anautilities import getMapping
+    if args.extChanMapping is not None:
+        dict_vfatChanLUT = getMapping(extChanMapping)
+    elif GEBtype == 'long':
+        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/longChannelMap.txt')
+    elif GEBtype == 'short':
+        dict_vfatChanLUT = getMapping(MAPPING_PATH+'/shortChannelMap.txt')
+    else:
+        raise RuntimeError("No external mapping provided and GEB type was not recognized")
+
+    
+    print('Initializing Histograms')
     if args.isVFAT2:
         dacName = "VThreshold1"
     else:
@@ -180,7 +193,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         dict_hMaxThrDAC_NoOutlier[vfat].SetLineColor(r.kRed)
         pass
 
-    print 'Filling Histograms'
+    print('Filling Histograms')
     if args.isVFAT2:
         dict_trimRange = dict((vfat,0) for vfat in range(0,vfatsPerGemVariant[gemType]))
     for event in thrTree:
@@ -217,7 +230,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     thrAnaTree.Branch( 'vthr', vthr, 'vthr/I' )
 
     #Determine Hot Channels
-    print 'Determining hot channels'
+    print('Determining hot channels')
 
     from gempython.gemplotting.utils.anaInfo import MaskReason
     from gempython.gemplotting.utils.anautilities import isOutlierMADOneSided
@@ -272,13 +285,13 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     #Save Output
     from gempython.gemplotting.utils.anautilities import getSummaryCanvas, addPlotToCanvas
     if not args.doNotSavePlots:
-        getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='%s/ThreshSummary.png'%outputDir, drawOpt="colz", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='{0}/ThreshSummary.png'.format(outputDir), drawOpt="colz", gemType=gemType, write2Disk=True)
 
         dict_h2D_thrDACProj = {}
         for vfat in range(0, vfatsPerGemVariant[gemType]):
             dict_h2D_thrDACProj[vfat] = dict_h2D_thrDAC[vfat].ProjectionY()
             pass
-        getSummaryCanvas(dictSummary=dict_h2D_thrDACProj, name='%s/VFATSummary.png'%outputDir, drawOpt="", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dictSummary=dict_h2D_thrDACProj, name='{0}/VFATSummary.png'.format(outputDir), drawOpt="", gemType=gemType, write2Disk=True)
 
         #Save thrDACMax Distributions Before/After Outlier Rejection
         canv_vt1Max = getSummaryCanvas(dict_hMaxThrDAC, name="canv_vt1Max", drawOpt="hist", gemType=gemType)
@@ -334,7 +347,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
                     pass
 
                 if isHotChan:
-                    print('VFAT %i Strip %i is noisy'%(vfat,chan))
+                    print('VFAT {0} Strip {1} is noisy'.format(vfat,chan))
                     for thresh in range(THR_DAC_MAX+1):
                         dict_h2D_thrDAC[vfat].SetBinContent(chan, thresh, 0)
                         pass
@@ -356,15 +369,15 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         dict_h2D_thrDAC[vfat].Write()
         dict_hMaxThrDAC[vfat].Write()
         dict_hMaxThrDAC_NoOutlier[vfat].Write()
-        dict_h2D_thrDACProjPruned[vfat] = dict_h2D_thrDAC[vfat].ProjectionY("h_thrDAC_VFAT%i"%vfat)
+        dict_h2D_thrDACProjPruned[vfat] = dict_h2D_thrDAC[vfat].ProjectionY("h_thrDAC_VFAT{0}".format(vfat))
         dict_h2D_thrDACProjPruned[vfat].Write()
         pass
 
     #Save output plots new hot channels subtracted off
     if not args.doNotSavePlots:
 
-        getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='%s/ThreshPrunedSummary.png'%outputDir, drawOpt="colz", gemType=gemType, write2Disk=True)
-        getSummaryCanvas(dictSummary=dict_h2D_thrDACProjPruned, name='%s/VFATPrunedSummary.png'%outputDir, drawOpt="", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='{0}/ThreshPrunedSummary.png'.format(outputDir), drawOpt="colz", gemType=gemType, write2Disk=True)
+        getSummaryCanvas(dictSummary=dict_h2D_thrDACProjPruned, name='{0}/VFATPrunedSummary.png'.format(outputDir), drawOpt="", gemType=gemType, write2Disk=True)
 
     #Now determine what thrDAC to use for configuration.  The first threshold bin with no entries for now.
     #Make a text file readable by TTree::ReadFile
@@ -378,7 +391,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         for thresh in range(THR_DAC_MAX+1,0,-1):
             if (proj.GetBinContent(thresh+1)) > 10.0:
                 if args.debug:
-                    print('vt1 for VFAT %i found'%vfat)
+                    print('vt1 for VFAT {0} found'.format(vfat))
                 vt1[vfat]=(thresh+1)
                 break
             pass
@@ -391,14 +404,14 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         for vfat in range(0,vfatsPerGemVariant[gemType]):
             if vfat not in dict_chipID:
                 continue
-            txt_vfat.write('%i\t%i\t%i\t%i\n'%(vfat,dict_chipID[vfat],vt1[vfat],trimRange[vfat]))
+            txt_vfat.write('{0}\t{1}\t{2}\t{3}\n'.format(vfat,dict_chipID[vfat],vt1[vfat],trimRange[vfat]))
             pass
     else:
         txt_vfat.write("vfatN/I:vfatID/I:vt1/I\n")
         for vfat in range(0,vfatsPerGemVariant[gemType]):
             if vfat not in dict_chipID:
                 continue
-            txt_vfat.write('%i\t%i\t%i\n'%(vfat,dict_chipID[vfat],vt1[vfat]))
+            txt_vfat.write('{0}i\t{1}\t{2}\n'.format(vfat,dict_chipID[vfat],vt1[vfat]))
             pass
     txt_vfat.close()
 
@@ -408,7 +421,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         if args.isVFAT2:
             confF.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n')
             if args.debug:
-                print 'vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n'
+                print('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n')
             for vfat in range (0,vfatsPerGemVariant[gemType]):
                 if vfat not in dict_chipID:
                     continue                
@@ -431,7 +444,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         else:
             confF.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:trimPolarity/I:mask/I:maskReason/I\n')
             if args.debug:
-                print 'vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n'
+                print('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n')
             for vfat in range (0,vfatsPerGemVariant[gemType]):
                 if vfat not in dict_chipID:
                     continue
@@ -439,7 +452,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
                 for chan in range(0,128):
                     isHotChan = vfatChanArray[ vfatChanArray['vfatCH'] == chan ]['mask']
                     if args.debug:
-                        print('%i\t%i\t%i\t%i\t%i\t%i\t%i\n'%(
+                        print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
                             vfat,
                             dict_chipID[vfat],
                             chan,
@@ -447,7 +460,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
                             dict_vfatTrimMaskData[vfat][chan]['trimPolarity'],
                             int(isHotChan or dict_vfatTrimMaskData[vfat][chan]['mask']),
                             dict_vfatTrimMaskData[vfat][chan]['maskReason']))
-                    confF.write('%i\t%i\t%i\t%i\t%i\t%i\t%i\n'%(
+                    confF.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
                         vfat,
                         dict_chipID[vfat],
                         chan,
@@ -635,7 +648,7 @@ def calibrateThrDAC(args):
         dirPath = getDirByAnaType("scurve", infoTuple[0])
         if not filePathExists(dirPath, infoTuple[1]):
             raise IOError("calibrateThrDAC(): File {0}/{1} does not exist or is not readable".format(dirPath, infoTuple[1]))
-        filename = "%s/%s/%s"%(dirPath, infoTuple[1], tree_names["scurveAna"][0])
+        filename = "{0}/{1}/{2}".format(dirPath, infoTuple[1], tree_names["scurveAna"][0])
 
         # Load the file
         r.TH1.AddDirectory(False)
@@ -753,9 +766,9 @@ def calibrateThrDAC(args):
                 thisVFAT_ENCMean = 0 #dummy value
                 thisVFAT_ENCStd = 1 #dummy value
                 
-            histThresh = r.TH1F("scurveMean_vfat%i"%vfat,"VFAT %i;S-Curve Mean #left(fC#right);N"%vfat, 
+            histThresh = r.TH1F("scurveMean_vfat{0}".format(vfat),"VFAT {0};S-Curve Mean #left(fC#right);N".format(vfat), 
                                 40, thisVFAT_ThreshMean - 5. * thisVFAT_ThreshStd, thisVFAT_ThreshMean + 5. * thisVFAT_ThreshStd )
-            histENC = r.TH1F("scurveSigma_vfat%i"%vfat,"VFAT %i;S-Curve Sigma #left(fC#right);N"%vfat,
+            histENC = r.TH1F("scurveSigma_vfat{0}".format(vfat),"VFAT {0};S-Curve Sigma #left(fC#right);N".format(vfat),
                                  40, thisVFAT_ENCMean - 5. * thisVFAT_ENCStd, thisVFAT_ENCMean + 5. * thisVFAT_ENCStd )
 
             #discard armDacVal points with too few good channels
@@ -1107,8 +1120,8 @@ def calibrateThrDAC(args):
                 func_ScurveSigmaVsThrDac.GetParError(1))
                 )
 
-    print "| vfatN | armDacVal | Dead Chan | High Noise | High Eff Ped | Fit At Init Val |"
-    print "| :---: | :-------: | :-------: | :--------: | :----------: | :-------------: |"        
+    print("| vfatN | armDacVal | Dead Chan | High Noise | High Eff Ped | Fit At Init Val |")
+    print("| :---: | :-------: | :-------: | :--------: | :----------: | :-------------: |")
 
     for vfat in range(-1,vfatsPerGemVariant[gemType]):
         for infoTuple in listChamberAndScanDate:
@@ -1117,13 +1130,13 @@ def calibrateThrDAC(args):
             vfatnOrAll = str(vfat)
             if vfatnOrAll == "-1":
                 vfatnOrAll = "All"
-            print '| %s | %i | %i | %i | %i | %i |'%(
+            print('| {0} | {1} | {2} | {3} | {4} | {5} |'.format(
                 vfatnOrAll,
                 infoTuple[2],
                 dict_nBadChannels[vfat][infoTuple[2]]["DeadChannel"],
                 dict_nBadChannels[vfat][infoTuple[2]]["HighNoise"],
                 dict_nBadChannels[vfat][infoTuple[2]]["HighEffPed"],
-                dict_nBadChannels[vfat][infoTuple[2]]["FitAtInitVal"])
+                dict_nBadChannels[vfat][infoTuple[2]]["FitAtInitVal"]))
 
     if args.savePlots:
         for vfat in range(-1,vfatsPerGemVariant[gemType]):
@@ -1337,7 +1350,6 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetMarkerStyle(23)
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetMarkerSize(0.8)
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetLineWidth(2)
-                print dacName, ohKey, vfat
                 # 2D Distributions
                 dict_vfatCHVsDACNameX_Rate2D[dacName][ohKey][vfat] = r.TGraph2D()
                 dict_vfatCHVsDACNameX_Rate2D[dacName][ohKey][vfat].SetName("g2D_vfatCH_vs_{0}_rate_vfat{1}".format(dacName.replace("_","-"),vfat))
@@ -1347,7 +1359,6 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                 pass
             pass
         pass
-    print "here"
     # create output TFiles
     outputFiles = {}
     for entry in crateMap:
@@ -1365,7 +1376,6 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
             outputFiles[ohKey] = r.TFile(strDirName+scandate+"/"+outfilename,'recreate')
             pass
         pass
-    print outputFiles
     # Loop over events the tree and fill plots
     print("Looping over stored events in rateTree")
     from math import sqrt
@@ -1551,7 +1561,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
             
         vfatConfg.write("vfatN/I:vt1/I:trimRange/I\n")
         for vfat,armDACVal in innerDictByVFATKey.iteritems():
-            vfatConfg.write('%i\t%i\t%i\n'%(vfat, armDACVal,0))
+            vfatConfg.write('{0}\t{1}\t{2}\n'.format(vfat, armDACVal,0))
         vfatConfg.close()    
         
     return 
