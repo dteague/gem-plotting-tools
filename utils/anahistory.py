@@ -371,7 +371,7 @@ class TimeSeriesData(object):
         """
         from gempython.tools.hw_constants import vfatsPerGemVariant
         badScans = _np.logical_or(_np.mean(self.noise, (0, 1)) < minAverageNoise,
-                                 _np.count_nonzero(self.mask, (0, 1)) / vfatsPerGemVariant[gemType] / 128 > maxMaskedStripOrChanFraction)
+                                 _np.count_nonzero(self.mask, (0, 1)) / vfatsPerGemVariant[self.gemType] / 128 > maxMaskedStripOrChanFraction)
         self.dates = self.dates[_np.logical_not(badScans)]
         self.mask = self.mask[:,:,_np.logical_not(badScans)]
         self.maskReason = self.maskReason[:,:,_np.logical_not(badScans)]

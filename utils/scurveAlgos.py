@@ -88,11 +88,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
 
     # Redirect sys.stdout and sys.stderr if necessary 
     from gempython.gemplotting.utils.multiprocUtils import redirectStdOutAndErr
-    from gempython.tools.hw_constants import vfatsPerGemVariant
     redirectStdOutAndErr("anaUltraScurve",outputDir)
-    
-    if ((vfatList is not None) and ((min(vfatList) < 0) or (max(vfatList) > 23))):
-        raise ValueError("anaUltraScurve(): Either vfatList=None or entries in vfatList must be in [0,23]")
     
     if args.isVFAT2: #if isVFAT2, deadChanCut are set to default for v2 electronics
         dacName = "VCal"
@@ -143,6 +139,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     gemType = gemTypeMapping[rp.tree2array(scurveTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+
+    if ((vfatList is not None) and ((min(vfatList) < 0) or (max(vfatList) > nVFATS-1))):
+        raise ValueError("anaUltraScurve(): Either vfatList=None or entries in vfatList must be in [0,{0}]".format(nVFATS-1))
+    
     listOfBranches = scurveTree.GetListOfBranches()
     if 'vfatID' in listOfBranches:
         array_chipID = np.unique(rp.tree2array(scurveTree, branches = [ 'vfatID','vfatN' ] ))
@@ -150,7 +153,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         for entry in array_chipID:
             dict_chipID[entry['vfatN']]=entry['vfatID']
     else:
-        dict_chipID = { vfat:0 for vfat in range(vfatsPerGemVariant[gemType]) }
+        dict_chipID = { vfat:0 for vfat in range(nVFATS) }
         
 
         
@@ -168,8 +171,8 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         printYellow("Calibration info for {0} taken from DB Query".format(dacName))
         from gempython.gemplotting.utils.dbutils import getVFAT3CalInfo
         # Need to pass a list to getVFAT3CalInfo() where idx of list matches vfatN
-        if len(dict_chipID) != vfatsPerGemVariant[gemType]:
-            for vfat in range(vfatsPerGemVariant[gemType]):
+        if len(dict_chipID) != nVFATS:
+            for vfat in range(nVFATS):
                 if vfat not in dict_chipID:
                     dict_chipID[vfat] = -1
         dbInfo = getVFAT3CalInfo(dict_chipID.values(), debug=args.debug, gemType=gemType)
@@ -190,10 +193,10 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     vSummaryPlotsNoMaskedChanPanPin2 = ndict()
 
     from gempython.gemplotting.utils.anautilities import getEmptyPerVFATList
-    vthr_list = getEmptyPerVFATList(vfatsPerGemVariant[gemType]) 
-    trim_list = getEmptyPerVFATList(vfatsPerGemVariant[gemType]) 
-    trimRange_list = getEmptyPerVFATList(vfatsPerGemVariant[gemType])
-    trimPolarity_list = getEmptyPerVFATList(vfatsPerGemVariant[gemType])
+    vthr_list = getEmptyPerVFATList(nVFATS) 
+    trim_list = getEmptyPerVFATList(nVFATS) 
+    trimRange_list = getEmptyPerVFATList(nVFATS)
+    trimPolarity_list = getEmptyPerVFATList(nVFATS)
     
     # Set default histogram behavior
     r.TH1.SetDefaultSumw2(False)
@@ -217,7 +220,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         raise RuntimeError("anaUltraScurve(): I did not understand this (channels, PanPin) combination: ({0},{1})".format(args.channels,args.PanPin))
 
     # Initialize distributions
-    for vfat in range(vfatsPerGemVariant[gemType]):
+    for vfat in range(nVFATS):
         try:
             chipID = dict_chipID[vfat]
         except KeyError as err:
@@ -235,15 +238,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         if not args.PanPin:
             vSummaryPlots[vfat] = r.TH2D('vSummaryPlots{0}'.format(vfat),
                     'VFAT {0}: chipID {1};{2};{3} #left(fC#right)'.format(vfat,chipID,stripChanOrPinName[1],dacName),
-                    128,-0.5,127.5,256,
-                    yMin_Charge,
-                    yMax_Charge)
+                    maxChans, -0.5, maxChans-0.5,
+                    256, yMin_Charge, yMax_Charge)
             vSummaryPlots[vfat].GetYaxis().SetTitleOffset(1.5)
             vSummaryPlotsNoMaskedChan[vfat] = r.TH2D('vSummaryPlotsNoMaskedChan{0}'.format(vfat),
                     'VFAT {0}: chipID {1};{2};{3} #left(fC#right)'.format(vfat,chipID,stripChanOrPinName[1],dacName),
-                    128,-0.5,127.5,256,
-                    yMin_Charge,
-                    yMax_Charge)
+                    maxChans, -0.5, maxChans-0.5,
+                    256, yMin_Charge, yMax_Charge)
             vSummaryPlotsNoMaskedChan[vfat].GetYaxis().SetTitleOffset(1.5)
         else:
             vSummaryPlots[vfat] = r.TH2D('vSummaryPlots{0}'.format(vfat),
@@ -271,7 +272,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                     yMax_Charge)
             vSummaryPlotsNoMaskedChanPanPin2[vfat].GetYaxis().SetTitleOffset(1.5)
             pass
-        for chan in range (0,128):
+        for chan in range (0,maxChans):
             vthr_list[vfat].append(0)
             trim_list[vfat].append(0)
             if isVFAT3:
@@ -305,13 +306,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 calDAC2Q_m=calDAC2Q_Slope, 
                 calDAC2Q_b=calDAC2Q_Intercept,
                 isVFAT3=isVFAT3,
-                nVFats = vfatsPerGemVariant[gemType]
+                nVFats = nVFATS
                 )
         pass
 
     # Get some of the operational settings of the ASIC
     # Refactor this using root_numpy???
-    dict_vfatID = dict((vfat, 0) for vfat in range(vfatsPerGemVariant[gemType]))
+    dict_vfatID = dict((vfat, 0) for vfat in range(nVFATS))
     listOfBranches = scurveTree.GetListOfBranches()
     nPulses = -1
     for event in scurveTree:
@@ -366,12 +367,12 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         fitSummary = open(outputDir+'/fitSummary.txt','w')
         fitSummary.write('vfatN/I:vfatID/I:vfatCH/I:fitP0/F:fitP1/F:fitP2/F:fitP3/F\n')
         scanFitResults = fitter.fit(debug=args.debug)
-        for vfat in range(vfatsPerGemVariant[gemType]):
+        for vfat in range(nVFATS):
             # If provided, skip all VFATs but the requested one
             if ((vfatList is not None) and (vfat not in vfatList)):
                 continue
 
-            for chan in range(0,128):
+            for chan in range(0,maxChans):
                 fitSummary.write(
                         '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
                             vfat,
@@ -390,19 +391,19 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         print("")
         masks = {}
         reason4Mask = {}
-        effectivePedestals = [ np.zeros(128) for vfat in range(vfatsPerGemVariant[gemType]) ]
+        effectivePedestals = [ np.zeros(maxChans) for vfat in range(nVFATS) ]
         print("| vfatN | Dead Chan | Hot Chan | Failed Fits | High Noise | High Eff Ped |")
         print("| :---: | :-------: | :------: | :---------: | :--------: | :----------: |")
-        for vfat in range(vfatsPerGemVariant[gemType]):
+        for vfat in range(nVFATS):
             # If provided, skip all VFATs but the requested one
             if ((vfatList is not None) and (vfat not in vfatList)):
                 continue
 
             #trimValue = np.zeros(128)
-            scurveMean = np.zeros(128)
-            channelNoise = np.zeros(128)
-            fitFailed = np.zeros(128, dtype=bool)
-            for chan in range(0, 128):
+            scurveMean = np.zeros(maxChans)
+            channelNoise = np.zeros(maxChans)
+            fitFailed = np.zeros(maxChans, dtype=bool)
+            for chan in range(0, maxChans):
                 # Compute values for cuts
                 channelNoise[chan] = scanFitResults[1][vfat][chan]
                 effectivePedestals[vfat][chan] = fitter.scanFuncs[vfat][chan].Eval(0.0)
@@ -421,7 +422,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                                        rejectHighTail=False) # rejects scurves with means shifted to low charge values
             
             # Create reason array
-            reason = np.zeros(128, dtype=int) # Not masked
+            reason = np.zeros(maxChans, dtype=int) # Not masked
             from gempython.gemplotting.utils.anaInfo import MaskReason
             reason[hot] |= MaskReason.HotChannel
             reason[fitFailed] |= MaskReason.FitFailed
@@ -526,7 +527,6 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         # Make output plots
         print("Storing Output Data")
         from gempython.gemplotting.mapping.chamberInfo import chamber_iEta2VFATPos, chamber_maxiEtaiPhiPair, chamber_vfatPos2iEta
-        nVfatsPerGem = vfatsPerGemVariant[gemType]
         maxiEta = chamber_maxiEtaiPhiPair[gemType][0]
         maxiPhi = chamber_maxiEtaiPhiPair[gemType][1]
         
@@ -537,33 +537,33 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         effPedSummaryPlotsByiEta = {}
         threshSummaryPlots = {}
         threshSummaryPlotsByiEta = {}
-        allENC = np.zeros(nVfatsPerGem*128)
-        h2DetThresh_All = r.TH2F("ScurveMean_All","ScurveMean_All",nVfatsPerGem,-0.5,nVfatsPerGem-0.5,
+        allENC = np.zeros(nVFATS*maxChans)
+        h2DetThresh_All = r.TH2F("ScurveMean_All","ScurveMean_All",nVFATS,-0.5,nVFATS-0.5,
                                  601,-0.05,60.05)
-        h2DetENC_All = r.TH2F("ScurveSigma_All","ScurveSigma_All",nVfatsPerGem,-0.5,nVfatsPerGem-0.5,
+        h2DetENC_All = r.TH2F("ScurveSigma_All","ScurveSigma_All",nVFATS,-0.5,nVFATS-0.5,
                               51,-0.05,5.05)
-        h2DetEffPed_All = r.TH2F("ScurveEffPed_All","Effective Pedestal All",nVfatsPerGem,-0.5,nVfatsPerGem-0.5,
+        h2DetEffPed_All = r.TH2F("ScurveEffPed_All","Effective Pedestal All",nVFATS,-0.5,nVFATS-0.5,
                                  nPulses+1, -0.5, nPulses+0.5)
 
-        allENCByiEta    = dict( (ieta,np.zeros(maxiPhi*128)) for ieta in range(1,maxiEta+1) )
-        allEffPedByiEta = dict( (ieta,(-1.*np.ones(maxiPhi*128))) for ieta in range(1,maxiEta+1) )
-        allThreshByiEta = dict( (ieta,np.zeros(maxiPhi*128)) for ieta in range(1,maxiEta+1) )
+        allENCByiEta    = dict( (ieta,np.zeros(maxiPhi*maxChans)) for ieta in range(1,maxiEta+1) )
+        allEffPedByiEta = dict( (ieta,(-1.*np.ones(maxiPhi*maxChans))) for ieta in range(1,maxiEta+1) )
+        allThreshByiEta = dict( (ieta,np.zeros(maxiPhi*maxChans)) for ieta in range(1,maxiEta+1) )
         ## Only in python 2.7 and up
         # allENCByiEta    = { ieta:np.zeros(3*128) for ieta in range(1,9) }
         # allEffPedByiEta = { ieta:(-1.*np.ones(3*128)) for ieta in range(1,9) }
         # allThreshByiEta = { ieta:np.zeros(3*128) for ieta in range(1,9) }
 
-        allEffPed = -1.*np.ones(nVfatsPerGem * 128)
-        allThresh = np.zeros(nVfatsPerGem * 128)
+        allEffPed = -1.*np.ones(nVFATS * maxChans)
+        allThresh = np.zeros(nVFATS * maxChans)
         
         
-        for vfat in range(vfatsPerGemVariant[gemType]):
+        for vfat in range(nVFATS):
             # If provided, skip all VFATs but the requested one
             if ((vfatList is not None) and (vfat not in vfatList)):
                 continue
 
-            stripPinOrChanArray = np.zeros(128)
-            for chan in range (0, 128):
+            stripPinOrChanArray = np.zeros(maxChans)
+            for chan in range (0, maxChans):
                 # Store stripChanOrPinType to use as x-axis of fit summary plots
                 stripPinOrChan = dict_vfatChanLUT[vfat][stripChanOrPinType][chan]
                 
@@ -572,9 +572,9 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                 iphi = chamber_iEta2VFATPos[gemType][ieta][vfat]
 
                 # Store Values for making fit summary plots
-                allENC[vfat*128 + chan] =  scanFitResults[1][vfat][chan]
-                allEffPed[vfat*128 + chan] = effectivePedestals[vfat][chan]
-                allThresh[vfat*128 + chan] = scanFitResults[0][vfat][chan]
+                allENC[vfat*maxChans + chan] =  scanFitResults[1][vfat][chan]
+                allEffPed[vfat*maxChans + chan] = effectivePedestals[vfat][chan]
+                allThresh[vfat*maxChans + chan] = scanFitResults[0][vfat][chan]
                 stripPinOrChanArray[chan] = float(stripPinOrChan)
                 
                 allENCByiEta[ieta][(iphi-1)*chan + chan] = scanFitResults[1][vfat][chan]
@@ -626,11 +626,11 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
 
             # Make fit Summary plot
             fitSummaryPlots[vfat] = r.TGraphErrors(
-                    128,
+                    maxChans,
                     stripPinOrChanArray,
-                    allThresh[(vfat*128):((vfat+1)*128)],
-                    np.zeros(128),
-                    allENC[(vfat*128):((vfat+1)*128)]
+                    allThresh[(vfat*maxChans):((vfat+1)*maxChans)],
+                    np.zeros(maxChans),
+                    allENC[(vfat*maxChans):((vfat+1)*maxChans)]
                     )
             fitSummaryPlots[vfat].SetTitle("VFAT {0} Fit Summary;Channel;Threshold #left(fC#right)".format(vfat))
             
@@ -645,13 +645,14 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             fitSummaryPlots[vfat].SetMarkerStyle(2)
             
             # Make thresh summary plot - bin size is variable
-            thisVFAT_ThreshMean = np.mean(allThresh[(vfat*128):((vfat+1)*128)])
-            thisVFAT_ThreshStd = np.std(allThresh[(vfat*128):((vfat+1)*128)])
-            histThresh = r.TH1F("scurveMean_vfat{0}".format(vfat),"VFAT {0};S-Curve Mean #left(fC#right);N".format(vfat),
+            thisVFAT_ThreshMean = np.mean(allThresh[(vfat*maxChans):((vfat+1)*maxChans)])
+            thisVFAT_ThreshStd = np.std(allThresh[(vfat*maxChans):((vfat+1)*maxChans)])
+            histThresh = r.TH1F("scurveMean_vfat{0}".format(vfat),
+                                "VFAT {0};S-Curve Mean #left(fC#right);N".format(vfat),
                                 40, thisVFAT_ThreshMean - 5. * thisVFAT_ThreshStd, thisVFAT_ThreshMean + 5. * thisVFAT_ThreshStd )
             histThresh.Sumw2()
             if thisVFAT_ThreshStd != 0: # Don't fill if we still at initial values
-                for thresh in allThresh[(vfat*128):((vfat+1)*128)]:
+                for thresh in allThresh[(vfat*maxChans):((vfat+1)*maxChans)]:
                     if thresh == 0: # Skip the case where it still equals the inital value
                         continue
                     histThresh.Fill(thresh)
@@ -668,7 +669,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             histEffPed = r.TH1F("scurveEffPed_vfat{0}".format(vfat),"VFAT {0};S-Curve Effective Pedestal #left(N#right);N".format(vfat),
                                 nPulses+1, -0.5, nPulses+0.5)
             histEffPed.Sumw2()
-            for effPed in allEffPed[(vfat*128):((vfat+1)*128)]:
+            for effPed in allEffPed[(vfat*maxChans):((vfat+1)*maxChans)]:
                 if effPed < 0: # Skip the case where it still equals the inital value
                     continue
                 histEffPed.Fill(effPed)
@@ -681,13 +682,13 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             effPedSummaryPlots[vfat] = histEffPed
             
             # Make enc summary plot bin size is variable
-            thisVFAT_ENCMean = np.mean(allENC[(vfat*128):((vfat+1)*128)])
-            thisVFAT_ENCStd = np.std(allENC[(vfat*128):((vfat+1)*128)])
+            thisVFAT_ENCMean = np.mean(allENC[(vfat*maxChans):((vfat+1)*maxChans)])
+            thisVFAT_ENCStd = np.std(allENC[(vfat*maxChans):((vfat+1)*maxChans)])
             histENC = r.TH1F("scurveSigma_vfat{0}".format(vfat),"VFAT {0};S-Curve Sigma #left(fC#right);N".format(vfat),
                                 40, thisVFAT_ENCMean - 5. * thisVFAT_ENCStd, thisVFAT_ENCMean + 5. * thisVFAT_ENCStd )
             histENC.Sumw2()
             if thisVFAT_ENCStd != 0: # Don't fill if we are still at initial values
-                for enc in allENC[(vfat*128):((vfat+1)*128)]:
+                for enc in allENC[(vfat*maxChans):((vfat+1)*maxChans)]:
                     if enc == 0: # Skip the case where it still equals the inital value
                         continue
                     histENC.Fill(enc)
@@ -892,12 +893,12 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         confF = open(outputDir+'/chConfig.txt','w')
         if isVFAT3:
             confF.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:trimPolarity/I:mask/I:maskReason/I\n')
-            for vfat in range(vfatsPerGemVariant[gemType]):
+            for vfat in range(nVFATS):
                 # If provided, skip all VFATs but the requested one
                 if ((vfatList is not None) and (vfat not in vfatList)):
                     continue
 
-                for chan in range(0, 128):
+                for chan in range(0, maxChans):
                     confF.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
                         vfat,
                         dict_vfatID[vfat],
@@ -908,12 +909,12 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
                         reason4Mask[vfat][chan]))
         else:
             confF.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I:maskReason/I\n')
-            for vfat in range(vfatsPerGemVariant[gemType]):
+            for vfat in range(nVFATS):
                 # If provided, skip all VFATs but the requested one
                 if ((vfatList is not None) and (vfat not in vfatList)):
                     continue
 
-                for chan in range (0, 128):
+                for chan in range (0, maxChans):
                     confF.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
                         vfat,
                         dict_vfatID[vfat],
@@ -938,14 +939,14 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             canvOfScurveHistosNoMaskedChan = plotAllSCurvesOnCanvas(vSummaryPlotsNoMaskedChan,None,"scurvesNoMaskedChan")
         
         canvOfScurveFits = {}
-        for vfat in range(vfatsPerGemVariant[gemType]):
+        for vfat in range(nVFATS):
             # If provided, skip all VFATs but the requested one
             if ((vfatList is not None) and (vfat not in vfatList)):
                 continue
 
             canvOfScurveFits[vfat] = r.TCanvas("canv_scurveFits_vfat{0}".format(vfat),"Scurve Fits from VFAT{0}".format(vfat),600,600)
             canvOfScurveFits[vfat].cd()
-            for chan in range (0,128):
+            for chan in range (0,maxChans):
                 if masks[vfat][chan]: # Do not draw fit for masked channels
                     continue
 
@@ -959,7 +960,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     outF.cd()
     if performFit:
         scurveFitTree.Write()
-    for vfat in range(vfatsPerGemVariant[gemType]):
+    for vfat in range(nVFATS):
         # If provided, skip all VFATs but the requested one
         if ((vfatList is not None) and (vfat not in vfatList)):
             continue

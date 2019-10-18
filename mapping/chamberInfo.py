@@ -37,7 +37,10 @@ except ImportError as e:
 ##### NEED TO FIX
 #### VERY TEMPORARY
 gemTypeMapping = {0:"ge11", 1:"ge21"}
-##### END    
+##### END
+
+CHANNELS_PER_VFAT = 128
+
 chamber_iEta2VFATPos = {}
 chamber_iEta2VFATPos["ge11"] = {
         1: { 7:1, 15:2, 23:3 }, #ieta: [ (vfat, iphi), (vfat, iphi), (vfat, iphi) ]
