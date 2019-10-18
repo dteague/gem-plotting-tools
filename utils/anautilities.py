@@ -86,20 +86,18 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
 	else:
             return chamber_config[(entry['shelf'],entry['slot'],entry['link'])]
 
+    ### MAY WANT TO CHANGE IF CAN GET GEMTYPE
     def getGemType(entry):
         detName = getDetName(entry)
         return detName[:detName.find('-')].lower()
-        
+    ### END
 
-       
     vfatArray = rp.tree2array(tree=dacScanTree,branches=list_bNames)
     dacNameArray = np.unique(vfatArray['nameX'])
 
     # Get VFATID's
     vfatIDArray = getSubArray(vfatArray, ['vfatID','vfatN'])
     vfatIDArray = np.sort(vfatIDArray,order='vfatN')['vfatID'] # index now gauranteed to match vfatN
-
-    
 
     # make the crateMap
     list_bNames.remove('dacValY')
@@ -109,9 +107,8 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
     crateMap = np.unique(rp.tree2array(tree=dacScanTree,branches=list_bNames))
     
     gemType = getGemType(crateMap[0])
-            
-
-
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
     
     # get nonzero VFATs
     dict_nonzeroVFATs = {}
@@ -230,13 +227,12 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
 
     print("Initializing TObjects")
 
-    from gempython.tools.hw_constants import vfatsPerGemVariant
     # Initialize a TGraphErrors and a TF1 for each vfat
     for idx in range(len(dacNameArray)):
         dacName = np.asscalar(dacNameArray[idx])
         for entry in crateMap:
             ohKey = (entry['shelf'],entry['slot'],entry['link'])
-            for vfat in range(0,vfatsPerGemVariant[gemType]):
+            for vfat in range(0,nVFATS):
                 dict_RawADCvsDAC_Graphs[dacName][ohKey][vfat] = r.TGraphErrors()
                 dict_RawADCvsDAC_Graphs[dacName][ohKey][vfat].GetXaxis().SetTitle(dacName)
                 dict_RawADCvsDAC_Graphs[dacName][ohKey][vfat].GetYaxis().SetTitle(adcName)
@@ -313,7 +309,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
         dacName = np.asscalar(dacNameArray[idx])
         for entry in crateMap:
             ohKey = (entry['shelf'],entry['slot'],entry['link'])
-            for vfat in range(0,vfatsPerGemVariant[gemType]):
+            for vfat in range(0,nVFATS):
                 if vfat not in dict_nonzeroVFATs[ohKey]:
                     #so that the output plots for these VFATs are completely empty
                     dict_DACvsADC_Funcs[dacName][ohKey][vfat].SetLineColor(0)
@@ -345,7 +341,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             graph_dacVals[dacName][ohKey].GetXaxis().SetTitle("VFATN")
             graph_dacVals[dacName][ohKey].GetYaxis().SetTitle("nominal {} value".format(dacName))
 
-            for vfat in range(0,vfatsPerGemVariant[gemType]):
+            for vfat in range(0,nVFATS):
                 if vfat not in dict_nonzeroVFATs[ohKey]:
                     continue
 
@@ -387,7 +383,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
         ohKey = (entry['shelf'],entry['slot'],entry['link'])
         detName = getDetName(entry)
         # Per VFAT Poosition
-        for vfat in range(0,vfatsPerGemVariant[gemType]):
+        for vfat in range(0,nVFATS):
             thisVFATDir = outputFiles[ohKey].mkdir("VFAT{0}".format(vfat))
 
             for idx in range(len(dacNameArray)):
@@ -420,7 +416,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             else:
                 canv_Summary.SaveAs("{0}/{1}/dacScans/{2}/Summary{1}_DACScan_{3}.png".format(dataPath,detName,scandate,dacName))
 
-    # Print Summary?
+    # Print Summary
     if args.printSum:
         print("| detName | shelf | slot | ohN | vfatN | dacName | Value |")
         print("| :-----: | :---: | :--: | :-: | :---: | :-----: | :---: |")
@@ -430,7 +426,7 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
             for idx in range(len(dacNameArray)):
                 dacName = np.asscalar(dacNameArray[idx])
 
-                for vfat in range(0,vfatsPerGemVariant[gemType]):
+                for vfat in range(0,nVFATS):
                     if vfat not in dict_nonzeroVFATs[ohKey]:
                         continue
 
@@ -599,27 +595,28 @@ def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel, gemType="ge11"):
 
     import ROOT as r
     from ..mapping.chamberInfo import chamber_maxiEtaiPhiPair
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
     maxiEta, maxiPhi = chamber_maxiEtaiPhiPair[gemType]
     
-    hRetMap = r.TH2F("ieta_vs_{0}_{1}".format(mapName,zLabel),"",maxiPhi*128, -0.5, maxiPhi*128-0.5, maxiEta, 0.5, maxiEta + 0.5)
+    hRetMap = r.TH2F("ieta_vs_{0}_{1}".format(mapName,zLabel),"",maxiPhi*maxChans, -0.5, maxiPhi*maxChans-0.5, maxiEta, 0.5, maxiEta + 0.5)
     hRetMap.SetXTitle(mapName)
     hRetMap.SetYTitle("i#eta")
     hRetMap.SetZTitle(zLabel)
 
     from gempython.gemplotting.mapping.chamberInfo import chamber_vfatPos2iEtaiPhi
     from gempython.tools.hw_constants import vfatsPerGemVariant
-    for idx in range(128*vfatsPerGemVariant[gemType]):
+    for idx in range(maxChans*vfatsPerGemVariant[gemType]):
         # Determine vfat, ieta, and iphi
-        vfat = idx // 128
+        vfat = idx // maxChans
         ieta = chamber_vfatPos2iEtaiPhi[gemType][vfat][0]
         iphi = chamber_vfatPos2iEtaiPhi[gemType][vfat][1]
 
         # Determine strip, panasonic pin, or channel
-        chan = idx % 128
+        chan = idx % maxChans
         stripPinOrChan = vfatChanLUT[vfat][mapName][chan]
 
         # Set Bin Content of Histogrma
-        hRetMap.SetBinContent(((iphi-1)*128+stripPinOrChan)+1, ieta, obsData[idx])
+        hRetMap.SetBinContent(((iphi-1)*maxChans+stripPinOrChan)+1, ieta, obsData[idx])
         pass
 
     return hRetMap
@@ -1614,8 +1611,7 @@ def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType=
 
     import ROOT as r
     from ..mapping.chamberInfo import chamber_vfatPos2PadIdx, chamber_maxiEtaiPhiPair
-    from gempython.tools.hw_constants import vfatsPerGemVariant
-
+    
     legend = r.TLegend(0.75,0.7,0.88,0.88)
     r.gStyle.SetOptStat(0)
     

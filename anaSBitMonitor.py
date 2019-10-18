@@ -28,8 +28,6 @@ if __name__ == '__main__':
     outF = r.TFile(filename+'/'+outfilename, 'recreate')
     inF = r.TFile(filename+'.root')
 
-    
-    
     # Determine the rates scanned
     print('Determining rates tested')
     import numpy as np
@@ -45,12 +43,15 @@ if __name__ == '__main__':
     #### VERY TEMPORARY
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in inF.sbitDataTree.GetListOfBranches():
-        gemType = "ge21"
+        gemType = "ge11"
     else:
         gemType = gemTypeMapping[rp.tree2array(tree=inF.sbitDataTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
-
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    
     print('Initializing histograms')
     from gempython.utils.nesteddict import nesteddict as ndict, flatten
 
@@ -69,8 +70,6 @@ if __name__ == '__main__':
     dict_h_sbitObsVsChanPulsed = ndict() #Keys as: [isValid][calEnable][rate][vfat]
     dict_h_sbitMultiVsSbitSize = ndict() #Keys as: [isValid][calEnable][rate][vfat]
 
-    from gempython.tools.hw_constants import vfatsPerGemVariant
-    
     rateMap = {}
     from gempython.gemplotting.utils.anautilities import formatSciNotation
     for isValid in isValidValues:
@@ -101,15 +100,15 @@ if __name__ == '__main__':
                 dict_h_vfatObsVsVfatPulsed[isValid][calEnable][rate] = r.TH2F(
                         "h_vfatObservedVsVfatPulsed_{0}_{1}Hz".format(postScript,int(rate)),
                         "Summmary - Rate {0} Hz;VFAT {1};VFAT Observed".format(int(rate),strPulsedOrUnmasked),
-                        vfatsPerGemVariant[gemType],-0.5,vfatsPerGemVariant[gemType]-0.5, vfatsPerGemVariant[gemType],-0.5,vfatsPerGemVariant[gemType]-0.5)
+                        nVFATS,-0.5,nVFATS-0.5, nVFATS,-0.5,nVFATS-0.5)
                 dict_h_vfatObsVsVfatPulsed[isValid][calEnable][rate].Sumw2()
 
-            for vfat in range(0, vfatsPerGemVariant[gemType]):
+            for vfat in range(0, nVFATS):
                 dict_h_chanVsRatePulsed_ZRateObs[isValid][calEnable][vfat] = r.TH2F(
                         "h_chanVsRatePulsed_ZRateObs_vfat{0}_{1}".format(vfat,postScript),
                         "VFAT{0};Rate #left(Hz#right);Channel",
                         len(ratesUsed),0,len(ratesUsed),
-                        128,-0.5,127.5)
+                        maxChans, -0.5, maxChans-0.5)
 
                 # Overall Rate Observed by CTP7
                 if calEnable:
@@ -151,7 +150,7 @@ if __name__ == '__main__':
                         rateMap[rate]=binX+1 # Used later to translate rate to bin position
                     dict_h_chanVsRatePulsed_ZRateObs[isValid][calEnable][vfat].GetXaxis().SetBinLabel(binX+1,formatSciNotation(str(rate)))
 
-                    # VFAT levpel
+                    # VFAT level
                     if (calEnable or (not calEnable and rate == 0.0)):
                         # 1D Obs
                         dict_h_sbitMulti[isValid][calEnable][rate][vfat] = r.TH1F(
@@ -170,7 +169,7 @@ if __name__ == '__main__':
                         dict_h_sbitObsVsChanPulsed[isValid][calEnable][rate][vfat] = r.TH2F(
                                 "h_sbitObsVsChanPulsed_vfat{0}_{1}_{2}Hz".format(vfat,postScript,int(rate)),
                                 "VFAT{0} - Rate {1} Hz;Channel {2};SBIT Observed".format(vfat,int(rate),strPulsedOrUnmasked),
-                                128,-0.5,127.5,64,-0.5,63.5)
+                                maxChans, -0.5, maxChans-0.5,64,-0.5,63.5)
                         dict_h_sbitObsVsChanPulsed[isValid][calEnable][rate][vfat].Sumw2()
 
                         dict_h_sbitMultiVsSbitSize[isValid][calEnable][rate][vfat] = r.TH2F(
@@ -290,7 +289,7 @@ if __name__ == '__main__':
         
         for calEnable in calEnableValues:
             for rate in ratesUsed:
-                for vfat in range(0, vfatsPerGemVariant[gemType]):
+                for vfat in range(0, nVFATS):
                     for event,multi in dict_validSbitsPerEvt[isValid][calEnable][rate][vfat].iteritems():
                         dict_h_sbitMulti[isValid][calEnable][rate][vfat].Fill(multi)
 
@@ -354,8 +353,8 @@ if __name__ == '__main__':
                 else:
                     dict_h_vfatObsVsVfatPulsed[isValid][1][-1].Add(dict_h_vfatObsVsVfatPulsed[isValid][1][rate])
 
-                cloneExists = { vfat:False for vfat in range(0, vfatsPerGemVariant[gemType]) }
-                for vfat in range(0, vfatsPerGemVariant[gemType]):
+                cloneExists = { vfat:False for vfat in range(0, nVFATS) }
+                for vfat in range(0, nVFATS):
                     if ( not cloneExists[vfat] ):
                         cloneExists[vfat] = True
 
@@ -392,7 +391,7 @@ if __name__ == '__main__':
 
     print("Storing TObjects in output TFile")
     # Per VFAT Plots
-    for vfat in range(0, vfatsPerGemVariant[gemType]):
+    for vfat in range(0, nVFATS):
         dirVFAT = outF.mkdir("VFAT{0}".format(vfat))
 
         for isValid in isValidValues:

@@ -54,10 +54,10 @@ if __name__ == "__main__":
         gemType = gemTypeMapping[rp.tree2array(tree=inFile.latTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
-
-
-    
     from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+
     # Open input file
     print("Opening input file: {0}".format(args.infile))
     infile = r.TFile(args.infile,"READ")
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # Make nested containers
     from gempython.utils.nesteddict import nesteddict as ndict
     baseDir = ndict() # baseDir[slot][oh] -> string
-    vfatDirs = ["VFAT-{0}".format(x) for x in range(vfatsPerGemVariant[gemType])]
+    vfatDirs = ["VFAT-{0}".format(x) for x in range(nVFATS)]
 
     allVFATsLatency = ndict()   #   allVFATsLatency[slot][oh]      -> histogram
     dictMapping = ndict()       #   dictMapping[slot][oh]          -> mapping dict
@@ -252,7 +252,7 @@ if __name__ == "__main__":
         canvLat1D = getSummaryCanvas(vfatLatHists[args.slot][oh], name="canvLatScan1D_AMC{0}_OH{1}".format(args.slot,oh), drawOpt="hist", gemType=gemType)
         canvLat2D = getSummaryCanvas(vfatLatHists2D[args.slot][oh], name="canvLatScan2D_AMC{0}_OH{1}".format(args.slot,oh), drawOpt="colz", gemType=gemType)
         
-        for vfat in range(0,vfatsPerGemVariant[gemType]):
+        for vfat in range(0,nVFATS):
             canvHitMulti.cd(vfat).SetLogx()
             canvHitMulti.cd(vfat).SetLogy()
             canvLat1D.cd(vfat).SetLogy()

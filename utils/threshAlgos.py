@@ -141,6 +141,10 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         gemType = gemTypeMapping[rp.tree2array(tree=thrTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+
     
     from gempython.utils.nesteddict import nesteddict as ndict
     dict_vfatChanLUT = ndict()
@@ -154,8 +158,6 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     else:
         raise RuntimeError("No external mapping provided and GEB type was not recognized")
 
-
-    from gempython.tools.hw_constants import vfatsPerGemVariant
     listOfBranches = thrTree.GetListOfBranches()
     if 'vfatID' in listOfBranches:
         array_chipID = np.unique(rp.tree2array(thrTree, branches = [ 'vfatID','vfatN' ] ))
@@ -163,7 +165,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         for entry in array_chipID:
             dict_chipID[entry['vfatN']]=entry['vfatID']
     else:
-        dict_chipID = { vfat:0 for vfat in range(vfatsPerGemVariant[gemType]) }
+        dict_chipID = { vfat:0 for vfat in range(nVFATS) }
 
     r.TH1.SetDefaultSumw2(False)
     r.gROOT.SetBatch(True)
@@ -172,7 +174,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     dict_hMaxThrDAC = {}
     dict_hMaxThrDAC_NoOutlier = {}
     dict_chanMaxThrDAC = {}
-    for vfat in range(0,vfatsPerGemVariant[gemType]):
+    for vfat in range(0,nVFATS):
         if vfat not in dict_chipID:
             dict_h2D_thrDAC[vfat] = r.TH2D()
             continue
@@ -181,7 +183,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         dict_h2D_thrDAC[vfat] = r.TH2D(
                 'h_thrDAC_vs_ROBstr_VFAT{0}'.format(vfat),
                 'VFAT{0} chipID {1};{2};{3} [DAC units]'.format(vfat,chipID,stripChanOrPinName[1],dacName),
-                128,-0.5,127.5,THR_DAC_MAX+1,-0.5,THR_DAC_MAX+0.5)
+                maxChans, -0.5, maxChan-0.5, THR_DAC_MAX+1,-0.5,THR_DAC_MAX+0.5)
         dict_hMaxThrDAC[vfat] = r.TH1F(
                 'vfat{0}ChanMaxthrDAC'.format(vfat),
                 "VFAT{0} chipID {1}".format(vfat,chipID),
@@ -195,7 +197,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
 
     print('Filling Histograms')
     if args.isVFAT2:
-        dict_trimRange = dict((vfat,0) for vfat in range(0,vfatsPerGemVariant[gemType]))
+        dict_trimRange = dict((vfat,0) for vfat in range(0,nVFATS))
     for event in thrTree:
         if args.isVFAT2:
             dict_trimRange[int(event.vfatN)] = int(event.dict_trimRange)
@@ -237,13 +239,13 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     import numpy as np
     import root_numpy as rp #note need root_numpy-4.7.2 (may need to run 'pip install root_numpy --upgrade')
     hot_channels = {}
-    for vfat in range(0,vfatsPerGemVariant[gemType]):
+    for vfat in range(0,nVFATS):
         if vfat not in dict_chipID:
             continue
         
         #For each channel determine the maximum thresholds
         dict_chanMaxThrDAC[vfat] = -1 * np.ones((2,dict_h2D_thrDAC[vfat].GetNbinsX()))
-        for chan in range(0,128):
+        for chan in range(0,maxChans):
             chanProj = dict_h2D_thrDAC[vfat].ProjectionY("projY",chan+1,chan+1,"")
             for thresh in range(chanProj.GetMaximumBin(),THR_DAC_MAX+1):
                 if(chanProj.GetBinContent(thresh) == 0):
@@ -255,7 +257,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
             pass
 
         #Determine Outliers (e.g. "hot" channels)
-        hot_channels[vfat] = [ False for chan in range(0,128) ]
+        hot_channels[vfat] = [ False for chan in range(0,maxChans) ]
         chanOutliers = isOutlierMADOneSided(dict_chanMaxThrDAC[vfat][1,:], thresh=args.zscore)
         for chan in range(0,len(chanOutliers)):
             hot_channels[vfat][chan] = chanOutliers[chan]
@@ -266,7 +268,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
             pass
 
         #Fill TTree
-        for chan in range(0,128):
+        for chan in range(0,maxChans):
             mask[0] = hot_channels[vfat][chan]
             if hot_channels[vfat][chan]:
                 maskReason[0] = MaskReason.HotChannel
@@ -288,7 +290,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         getSummaryCanvas(dictSummary=dict_h2D_thrDAC, name='{0}/ThreshSummary.png'.format(outputDir), drawOpt="colz", gemType=gemType, write2Disk=True)
 
         dict_h2D_thrDACProj = {}
-        for vfat in range(0, vfatsPerGemVariant[gemType]):
+        for vfat in range(0, nVFATS):
             dict_h2D_thrDACProj[vfat] = dict_h2D_thrDAC[vfat].ProjectionY()
             pass
         getSummaryCanvas(dictSummary=dict_h2D_thrDACProj, name='{0}/VFATSummary.png'.format(outputDir), drawOpt="", gemType=gemType, write2Disk=True)
@@ -335,7 +337,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     hot_channels = rp.tree2array(thrAnaTree, branches=list_bNames)
     if not args.pervfat:
         print("Subtracting off hot channels")
-        for vfat in range(0,vfatsPerGemVariant[gemType]):
+        for vfat in range(0,nVFATS):
             if vfat not in dict_chipID:
                 continue
             vfatChanArray = hot_channels[ hot_channels['vfatN'] == vfat ]
@@ -359,7 +361,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     outFile.cd()
     thrAnaTree.Write()
     dict_h2D_thrDACProjPruned = {}
-    for vfat in range(0,vfatsPerGemVariant[gemType]):
+    for vfat in range(0,nVFATS):
         #if we don't have any data for this VFAT, we just need to initialize the TH1D since it is drawn later
         if vfat not in dict_chipID:
             dict_h2D_thrDACProjPruned[vfat] = r.TH1D()
@@ -382,8 +384,8 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     #Now determine what thrDAC to use for configuration.  The first threshold bin with no entries for now.
     #Make a text file readable by TTree::ReadFile
     print('Determining the thrDAC values for each VFAT')
-    vt1 = dict((vfat,0) for vfat in range(0,vfatsPerGemVariant[gemType]))
-    for vfat in range(0,vfatsPerGemVariant[gemType]):
+    vt1 = dict((vfat,0) for vfat in range(0,nVFATS))
+    for vfat in range(0,nVFATS):
         if vfat not in dict_chipID:
             continue        
         proj = dict_h2D_thrDAC[vfat].ProjectionY()
@@ -401,14 +403,14 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     txt_vfat = open(outputDir+"/vfatConfig.txt", 'w')
     if args.isVFAT2:
         txt_vfat.write("vfatN/I:vfatID/I:vt1/I:trimRange/I\n")
-        for vfat in range(0,vfatsPerGemVariant[gemType]):
+        for vfat in range(0,nVFATS):
             if vfat not in dict_chipID:
                 continue
             txt_vfat.write('{0}\t{1}\t{2}\t{3}\n'.format(vfat,dict_chipID[vfat],vt1[vfat],trimRange[vfat]))
             pass
     else:
         txt_vfat.write("vfatN/I:vfatID/I:vt1/I\n")
-        for vfat in range(0,vfatsPerGemVariant[gemType]):
+        for vfat in range(0,nVFATS):
             if vfat not in dict_chipID:
                 continue
             txt_vfat.write('{0}i\t{1}\t{2}\n'.format(vfat,dict_chipID[vfat],vt1[vfat]))
@@ -422,11 +424,11 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
             confF.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n')
             if args.debug:
                 print('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n')
-            for vfat in range (0,vfatsPerGemVariant[gemType]):
+            for vfat in range (0,nVFATS):
                 if vfat not in dict_chipID:
                     continue                
                 vfatChanArray = hot_channels[ hot_channels['vfatN'] == vfat ]
-                for chan in range (0, 128):
+                for chan in range (0, maxChans):
                     isHotChan = vfatChanArray[ vfatChanArray['vfatCH'] == chan ]['mask']
                     if args.debug:
                         print('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(
@@ -445,11 +447,11 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
             confF.write('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:trimPolarity/I:mask/I:maskReason/I\n')
             if args.debug:
                 print('vfatN/I:vfatID/I:vfatCH/I:trimDAC/I:mask/I\n')
-            for vfat in range (0,vfatsPerGemVariant[gemType]):
+            for vfat in range (0,nVFATS):
                 if vfat not in dict_chipID:
                     continue
                 vfatChanArray = hot_channels[ hot_channels['vfatN'] == vfat ]
-                for chan in range(0,128):
+                for chan in range(0,maxChans):
                     isHotChan = vfatChanArray[ vfatChanArray['vfatCH'] == chan ]['mask']
                     if args.debug:
                         print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(
@@ -585,12 +587,13 @@ def calibrateThrDAC(args):
     # #### VERY TEMPORARY
     gemType = chamberName[:chamberName.find("-")].lower()
     # ##### END
-    
-    
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+
     # Do we load an optional vfat serial number table? (e.g. chips did not have serial number in efuse burned in)
     import numpy as np
     import root_numpy as rp
-    from gempython.tools.hw_constants import vfatsPerGemVariant
     if args.listOfVFATs is not None:
         try:
             mapVFATPos2VFATSN = np.loadtxt(
@@ -604,7 +607,7 @@ def calibrateThrDAC(args):
             print(type(err))
             return os.EX_NOINPUT
     else:
-        mapVFATPos2VFATSN = np.zeros(vfatsPerGemVariant[gemType],dtype={'names':('vfatN', 'serialNum'),'formats':('u4', 'u4')})
+        mapVFATPos2VFATSN = np.zeros(nVFATS,dtype={'names':('vfatN', 'serialNum'),'formats':('u4', 'u4')})
 
     # Get list of THR DAC values
     listOfThrValues = []
@@ -677,7 +680,7 @@ def calibrateThrDAC(args):
         #we also remove scurve fits in which the noise or the threshold are equal to their initial values
         scurveFitMask4 = np.logical_and(scurveFitData['noise'] != 0,scurveFitData['threshold'] != 0)
 
-        for vfat in range(-1,vfatsPerGemVariant[gemType]):
+        for vfat in range(-1,nVFATS):
             if vfat == -1:
                 dict_nBadChannels[vfat][infoTuple[2]]["DeadChannel"] = len(scurveFitData[scurveFitMask1 == False])
                 dict_nBadChannels[vfat][infoTuple[2]]["HighNoise"] = len(scurveFitData[scurveFitMask2 == False])
@@ -685,10 +688,10 @@ def calibrateThrDAC(args):
                 dict_nBadChannels[vfat][infoTuple[2]]["FitAtInitVal"] = len(scurveFitData[scurveFitMask4 == False])
             else:
                 scurveFitMaskVfat = scurveFitData["vfatN"] == vfat
-                dict_nBadChannels[vfat][infoTuple[2]]["DeadChannel"] = 128-len(scurveFitData[np.logical_and(scurveFitMask1,scurveFitMaskVfat)])
-                dict_nBadChannels[vfat][infoTuple[2]]["HighNoise"] = 128-len(scurveFitData[np.logical_and(scurveFitMask2,scurveFitMaskVfat)])
-                dict_nBadChannels[vfat][infoTuple[2]]["HighEffPed"] = 128-len(scurveFitData[np.logical_and(scurveFitMask3,scurveFitMaskVfat)])
-                dict_nBadChannels[vfat][infoTuple[2]]["FitAtInitVal"] = 128-len(scurveFitData[np.logical_and(scurveFitMask4,scurveFitMaskVfat)])
+                dict_nBadChannels[vfat][infoTuple[2]]["DeadChannel"] = maxChans-len(scurveFitData[np.logical_and(scurveFitMask1,scurveFitMaskVfat)])
+                dict_nBadChannels[vfat][infoTuple[2]]["HighNoise"] = maxChans-len(scurveFitData[np.logical_and(scurveFitMask2,scurveFitMaskVfat)])
+                dict_nBadChannels[vfat][infoTuple[2]]["HighEffPed"] = maxChans-len(scurveFitData[np.logical_and(scurveFitMask3,scurveFitMaskVfat)])
+                dict_nBadChannels[vfat][infoTuple[2]]["FitAtInitVal"] = maxChans-len(scurveFitData[np.logical_and(scurveFitMask4,scurveFitMaskVfat)])
 
         scurveFitMask = np.logical_and(np.logical_and(np.logical_and(scurveFitMask1,scurveFitMask2),scurveFitMask3),scurveFitMask4)
         scurveFitData = scurveFitData[scurveFitMask] 
@@ -696,7 +699,7 @@ def calibrateThrDAC(args):
         ###################
         # Get and fit individual distributions
         ###################
-        for vfat in range(-1,vfatsPerGemVariant[gemType]):
+        for vfat in range(-1,nVFATS):
             if vfat == -1:
                 suffix = "All"
                 loadPath = suffix
@@ -940,7 +943,7 @@ def calibrateThrDAC(args):
     if args.debug:
         print("| vfatN | coef4 | coef3 | coef2 | coef1 | coef0 | noise | noise_err |")
         print("| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :-------: |")
-    for vfat in range(-1,vfatsPerGemVariant[gemType]):
+    for vfat in range(-1,nVFATS):
         if vfat == -1:
             suffix = "All"
             directory = "Summary"
@@ -1123,7 +1126,7 @@ def calibrateThrDAC(args):
     print("| vfatN | armDacVal | Dead Chan | High Noise | High Eff Ped | Fit At Init Val |")
     print("| :---: | :-------: | :-------: | :--------: | :----------: | :-------------: |")
 
-    for vfat in range(-1,vfatsPerGemVariant[gemType]):
+    for vfat in range(-1,nVFATS):
         for infoTuple in listChamberAndScanDate:
             if vfat not in dict_nBadChannels or infoTuple[2] not in dict_nBadChannels[vfat]:
                 continue
@@ -1139,7 +1142,7 @@ def calibrateThrDAC(args):
                 dict_nBadChannels[vfat][infoTuple[2]]["FitAtInitVal"]))
 
     if args.savePlots:
-        for vfat in range(-1,vfatsPerGemVariant[gemType]):
+        for vfat in range(-1,nVFATS):
             dict_canvScurveMeanByThrDac[vfat].SaveAs("{0}/{1}.png".format(args.outputDir,dict_canvScurveMeanByThrDac[vfat].GetName()))
             dict_canvScurveSigmaByThrDac[vfat].SaveAs("{0}/{1}.png".format(args.outputDir,dict_canvScurveSigmaByThrDac[vfat].GetName()))
             dict_canvScurveMeanVsThrDac[vfat].SaveAs("{0}/{1}.png".format(args.outputDir,dict_canvScurveMeanVsThrDac[vfat].GetName()))
@@ -1151,7 +1154,6 @@ def calibrateThrDAC(args):
     # Make summary canvases, always save these
     canvScurveMeanByThrDac_Summary = getSummaryCanvas(dict_mGraphScurveMean, name="canvScurveMeanByThrDac_Summary", drawOpt="APE1", gemType=gemType)
     canvScurveSigmaByThrDac_Summary = getSummaryCanvas(dict_mGraphScurveSigma, name="canvScurveSigmaByThrDac_Summary", drawOpt="APE1", gemType=gemType)
-    ### FIX THIS
     canvScurveMeanVsThrDac_Summary = getSummaryCanvas(dict_ScurveMeanVsThrDac, name="canvScurveMeanVsThrDac_Summary", drawOpt="APE1", gemType=gemType)
     canvScurveMeanVsThrDac_Summary = addPlotToCanvas(canv=canvScurveMeanVsThrDac_Summary, content=dict_funcScurveMeanVsThrDac, gemType=gemType)
     canvScurveSigmaVsThrDac_Summary = getSummaryCanvas(dict_ScurveSigmaVsThrDac, name="canvScurveSigmaVsThrDac_Summary", drawOpt="APE1", gemType=gemType)
@@ -1280,8 +1282,17 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
         for entry in crateMap:
             detNamesMap[(entry['shelf'],entry['slot'],entry['link'])] = entry['detName'][0]
 
+    ##### NEED TO FIX
+    #### VERY TEMPORARY
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    gemType = gemTypeMapping[rp.tree2array(rateTree, branches =[ 'gemType' ] )[0][0]]
+    if 'gemType' not in inFile.latTree.GetListOfBranches():
+        gemType = "ge11"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=inFile.latTree, branches =[ 'gemType' ] )[0][0]]
+    print gemType
+    ##### END
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
     
     # get nonzero VFATs
     dict_nonzeroVFATs = {}
@@ -1300,7 +1311,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
     #### VERY TEMPORARY
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in rateTree.GetListOfBranches():
-        gemType = "ge21"
+        gemType = "ge11"
     else:
         gemType = gemTypeMapping[rp.tree2array(tree=rateTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
@@ -1328,19 +1339,17 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
             pass
         pass
 
-
     # make nested dictionaries
     from gempython.utils.nesteddict import nesteddict as ndict
     dict_Rate1DVsDACNameX = ndict() #[dacName][ohKey][vfat] = TGraphErrors
     dict_vfatCHVsDACNameX_Rate2D = ndict() #[dacName][ohKey][vfat] = TGraph2D
 
-    from gempython.tools.hw_constants import vfatsPerGemVariant
     # initialize a TGraphErrors and a TF1 for each vfat
     for idx in range(len(dacNameArray)):
         dacName = np.asscalar(dacNameArray[idx])
         for entry in crateMap:
             ohKey = (entry['shelf'],entry['slot'],entry['link'])
-            for vfat in range(0,vfatsPerGemVariant[gemType]+1): #24th VFAT represents "overall case"
+            for vfat in range(0,nVFATS+1): #24th VFAT represents "overall case"
                 # 1D Distributions
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat] = r.TGraphErrors()
                 dict_Rate1DVsDACNameX[dacName][ohKey][vfat].SetName("g1D_rate_vs_{0}_vfat{1}".format(dacName.replace("_","-"),vfat))
@@ -1438,7 +1447,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
         # clear the inflection point table for each new link
         inflectTable = []
         # Per VFAT Poosition
-        for vfat in range(0, vfatsPerGemVariant[gemType]):
+        for vfat in range(0, nVFATS):
             thisVFATDir = outputFiles[ohKey].mkdir("VFAT{0}".format(vfat))
 
             for idx in range(len(dacNameArray)):
@@ -1494,13 +1503,13 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
             dacName = np.asscalar(dacNameArray[idx])
             if perchannel:
                 canv_Summary2D = getSummaryCanvas(dict_vfatCHVsDACNameX_Rate2D[dacName][ohKey], name="canv_Summary_Rate2D_vs_{0}".format(dacName), drawOpt="TRI1", gemType=gemType)
-                for vfat in range(1,vfatsPerGemVariant[gemType]+1):
+                for vfat in range(1,nVFATS+1):
                     canv_Summary2D.cd(vfat).SetLogz()
             else:
                 canv_Summary1D = getSummaryCanvas(dict_Rate1DVsDACNameX[dacName][ohKey], name="canv_Summary_Rate1D_vs_{0}".format(dacName), drawOpt="APE1", gemType=gemType)
                  # make 24 TLines
                 kneeLine= []
-                for vfat in range(0,vfatsPerGemVariant[gemType]):
+                for vfat in range(0,nVFATS):
                     canv_Summary1D.cd(vfat + 1).SetLogy()
 
                     # make sure the inflection point is there
