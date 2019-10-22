@@ -45,8 +45,7 @@ if __name__ == "__main__":
     r.gROOT.SetBatch(True)
     r.gStyle.SetOptStat(1111111)
 
-        ##### NEED TO FIX
-    #### VERY TEMPORARY
+    ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in inFile.latTree.GetListOfBranches():
         gemType = "ge11"

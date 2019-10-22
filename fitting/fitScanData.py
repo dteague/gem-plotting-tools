@@ -134,6 +134,7 @@ class ScanDataFitter(DeadChannelFinder):
         super(ScanDataFitter, self).__init__(nVFats)
 
         from gempython.utils.nesteddict import nesteddict as ndict
+        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
         r.gStyle.SetOptStat(0)
 
         self.Nev = ndict()
@@ -155,14 +156,14 @@ class ScanDataFitter(DeadChannelFinder):
             self.calDAC2Q_b = calDAC2Q_b
 
         for vfat in range(0,self.nVFats):
-            self.scanFitResults[0][vfat] = np.zeros(128)
-            self.scanFitResults[1][vfat] = np.zeros(128)
-            self.scanFitResults[2][vfat] = np.zeros(128)
-            self.scanFitResults[3][vfat] = np.zeros(128)
-            self.scanFitResults[4][vfat] = np.zeros(128)
-            self.scanFitResults[5][vfat] = np.zeros(128)
-            self.scanFitResults[6][vfat] = np.zeros(128, dtype=bool)
-            for ch in range(0,128):
+            self.scanFitResults[0][vfat] = np.zeros(maxChans)
+            self.scanFitResults[1][vfat] = np.zeros(maxChans)
+            self.scanFitResults[2][vfat] = np.zeros(maxChans)
+            self.scanFitResults[3][vfat] = np.zeros(maxChans)
+            self.scanFitResults[4][vfat] = np.zeros(maxChans)
+            self.scanFitResults[5][vfat] = np.zeros(maxChans)
+            self.scanFitResults[6][vfat] = np.zeros(maxChans, dtype=bool)
+            for ch in range(0,maxChans):
                 self.scanCount[vfat][ch] = 0
                 if self.isVFAT3:
                     self.scanFuncs[vfat][ch] = r.TF1('scurveFit_vfat{0}_chan{1}'.format(vfat,ch),'[3]*TMath::Erf((TMath::Max([2],x)-[0])/(TMath::Sqrt(2)*[1]))+[3]',
@@ -179,7 +180,7 @@ class ScanDataFitter(DeadChannelFinder):
                 pass
             pass
 
-        self.fitValid = [ np.zeros(128, dtype=bool) for vfat in range(self.nVFats) ]
+        self.fitValid = [ np.zeros(maxChans, dtype=bool) for vfat in range(self.nVFats) ]
 
         return
 
@@ -244,7 +245,8 @@ class ScanDataFitter(DeadChannelFinder):
 
         r.gROOT.SetBatch(True)
         r.gStyle.SetOptStat(0)
-
+        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    
         random = r.TRandom3()
         random.SetSeed(0)
         for vfat in range(0,self.nVFats):
@@ -259,7 +261,7 @@ class ScanDataFitter(DeadChannelFinder):
             if not debug:
                 print('fitting vfat {0}'.format(vfat))
 
-            for ch in range(0,128):
+            for ch in range(0,maxChans):
                 if debug:
                     print('fitting vfat {0} chan {1}'.format(vfat,ch))
                 

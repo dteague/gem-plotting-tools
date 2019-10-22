@@ -76,8 +76,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     import numpy as np
     import root_numpy as rp
 
-    ##### NEED TO FIX
-    #### VERY TEMPORARY
+    ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in inFile.latTree.GetListOfBranches():
         gemType = "ge11"

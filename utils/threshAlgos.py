@@ -132,8 +132,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     import numpy as np
     import root_numpy as rp
     
-    ##### NEED TO FIX
-    #### VERY TEMPORARY
+    ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in thrTree.GetListOfBranches():
         gemType = "ge11"
@@ -583,8 +582,7 @@ def calibrateThrDAC(args):
     thrDacName = parsedTuple[1]
     chamberName = listChamberAndScanDate[0][0]
 
-    # ##### NEED TO FIX
-    # #### VERY TEMPORARY
+    ##### FIXME
     gemType = chamberName[:chamberName.find("-")].lower()
     # ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
@@ -1282,14 +1280,12 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
         for entry in crateMap:
             detNamesMap[(entry['shelf'],entry['slot'],entry['link'])] = entry['detName'][0]
 
-    ##### NEED TO FIX
-    #### VERY TEMPORARY
+    ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in inFile.latTree.GetListOfBranches():
         gemType = "ge11"
     else:
         gemType = gemTypeMapping[rp.tree2array(tree=inFile.latTree, branches =[ 'gemType' ] )[0][0]]
-    print gemType
     ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
@@ -1307,16 +1303,6 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
         printYellow("crateMap:\n{0}".format(crateMap))
         printYellow("dacNameArray:\n{0}".format(dacNameArray))
 
-    ##### NEED TO FIX
-    #### VERY TEMPORARY
-    from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    if 'gemType' not in rateTree.GetListOfBranches():
-        gemType = "ge11"
-    else:
-        gemType = gemTypeMapping[rp.tree2array(tree=rateTree, branches =[ 'gemType' ] )[0][0]]
-    print gemType
-    ##### END
-        
     # make output directories
     from gempython.utils.wrappers import runCommand
     from gempython.gemplotting.utils.anautilities import getDirByAnaType
@@ -1507,7 +1493,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
                     canv_Summary2D.cd(vfat).SetLogz()
             else:
                 canv_Summary1D = getSummaryCanvas(dict_Rate1DVsDACNameX[dacName][ohKey], name="canv_Summary_Rate1D_vs_{0}".format(dacName), drawOpt="APE1", gemType=gemType)
-                 # make 24 TLines
+                 # make nVFATs TLines
                 kneeLine= []
                 for vfat in range(0,nVFATS):
                     canv_Summary1D.cd(vfat + 1).SetLogy()

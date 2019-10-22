@@ -39,8 +39,7 @@ if __name__ == '__main__':
     isValidValues = np.unique(initInfo['isValid'])
     ratesUsed = np.unique(initInfo['ratePulsed'])
 
-    ##### NEED TO FIX
-    #### VERY TEMPORARY
+    ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     if 'gemType' not in inF.sbitDataTree.GetListOfBranches():
         gemType = "ge11"

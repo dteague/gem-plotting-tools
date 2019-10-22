@@ -34,8 +34,7 @@ except ImportError as e:
             #placeholder
         }
 
-##### NEED TO FIX
-#### VERY TEMPORARY
+##### FIXME
 gemTypeMapping = {0:"ge11", 1:"ge21"}
 ##### END
 

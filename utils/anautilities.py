@@ -86,12 +86,6 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
 	else:
             return chamber_config[(entry['shelf'],entry['slot'],entry['link'])]
 
-    ### MAY WANT TO CHANGE IF CAN GET GEMTYPE
-    def getGemType(entry):
-        detName = getDetName(entry)
-        return detName[:detName.find('-')].lower()
-    ### END
-
     vfatArray = rp.tree2array(tree=dacScanTree,branches=list_bNames)
     dacNameArray = np.unique(vfatArray['nameX'])
 
@@ -105,8 +99,13 @@ def dacAnalysis(args, dacScanTree, chamber_config, scandate='noscandate'):
     list_bNames.remove('vfatID')
     list_bNames.remove('vfatN')
     crateMap = np.unique(rp.tree2array(tree=dacScanTree,branches=list_bNames))
-    
+
+    ### FIXME
+    def getGemType(entry):
+        detName = getDetName(entry)
+        return detName[:detName.find('-')].lower()
     gemType = getGemType(crateMap[0])
+    ### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
     
@@ -887,7 +886,7 @@ def getNumCores2Use(args):
 
     return int(usageFactor*availableCores)
 
-def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff,savePlots=True): 
+def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff,savePlots=True, gemType="ge11"): 
     """
     Plots GBT phase scan data as a TH2F and the GBT phase set points as a TGraph for
     each optohybrid found in the two input files.  Note it's assume that if OHX is in
@@ -911,6 +910,8 @@ def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff
     import numpy as np
     import ROOT as r
 
+    from gempython.tools.hw_constants import vfatsPerGemVariant
+    nVFATS = vfatsPerGemVariant[gemType]
     # Create 2D plot showing phase scan results
     # =========================================
     # Load input data
@@ -949,7 +950,7 @@ def getPhaseScanPlots(phaseScanFile,phaseSetPtsFile,identifier=None,ohMask=0xfff
             name = "h2D_phaseScan_OH{0}".format(ohN)
             pass
 
-        dict_phaseScanDists[ohN] = r.TH2D(name,"",24,-0.5,23.5,16,-0.5,15.5)
+        dict_phaseScanDists[ohN] = r.TH2D(name,"", nVFATS, -0.5, nVFATS-0.5, 16,-0.5,15.5)
         dict_phaseScanDists[ohN].SetNdivisions(512,"X")
         dict_phaseScanDists[ohN].GetXaxis().SetTitle("VFAT Position")
         dict_phaseScanDists[ohN].GetYaxis().SetTitle("GBT Phase")
@@ -1070,7 +1071,7 @@ def getScandateFromFilename(infilename):
     else:    
         return 'noscandate'
 
-def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,savePlots=True):
+def getSinglePhaseScanPlot(ohN,phaseScanFile,phaseSetPtsFile,identifier=None,savePlots=True, gemType="ge11"):
     """
     As getPhaseScanPlots but for a single optohybrid, defined by ohN, inside the input files.
     Returns a tuple where elements are given by:
@@ -1543,13 +1544,15 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
     trimPt             - Optional, list of trim points the dependent variable was aligned
                          to if it is the result of trimming.  One entry per VFAT
     drawOpt            - Draw option
+    gemType            - gemType used for getting the correct mapping
     write2Disk         - Option to save canvas with the name as the variable
     """
 
     import ROOT as r
     from ..mapping.chamberInfo import chamber_vfatPos2PadIdx, chamber_maxiEtaiPhiPair
     from gempython.tools.hw_constants import vfatsPerGemVariant
-
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    
     legend = r.TLegend(0.75,0.7,0.88,0.88)
     r.gStyle.SetOptStat(0)
 
@@ -1566,7 +1569,7 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
             except KeyError as err:
                 continue
             if trimPt is not None and trimLine is not None:
-                trimLine = r.TLine(-0.5, trimVcal[vfat], 127.5, trimVcal[vfat])
+                trimLine = r.TLine(-0.5, trimVcal[vfat], maxChans-0.5, trimVcal[vfat])
                 legend.Clear()
                 legend.AddEntry(trimLine, 'trimVCal is {0}'.format(trimVcal[vfat]))
                 legend.Draw('SAME')
@@ -1600,12 +1603,13 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
 
 def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType="ge11", write2Disk=False):
     """
-    Makes an image with summary canvases drawn on it
+    Makes an Canvas with summary canvases drawn on it
 
     dictSummary        - dict of TObjects to be drawn, one per ieta.  Each will be 
                          drawn on a separate pad
-    name               - Name of output image
+    name               - Name of canvas
     drawOpt            - Draw option
+    gemType            - gemType used for getting the correct mapping
     write2Disk         - Option to save canvas with the name as the variable "name"
     """
 
@@ -1640,12 +1644,13 @@ def getSummaryCanvasByiEta(dictSummary, name='Summary', drawOpt="colz", gemType=
 
 def addPlotToCanvas(canv=None, content = None, drawOpt = '', gemType="ge11"):
     """
-    Creates a A by B sized canvas for summary plots.
+    Adds additional plots to a canvas created by getSummaryCanvas() (takes care of the mapping)
     
-    canv - TCanvas previously produced by make3x8Canvas() or one that has been subdivided into a 3x8 grid
-    content - either None or an array of 24 (one per VFAT) TObjects that will be drawn on the canvas.
+    canv - TCanvas previously produced by getSummaryCanvas
+    content - either None or an array of TObjects (one per VFAT) that will be drawn on the canvas.
     drawOpt - draw option to be used when drawing elements of initialContent
-     
+    gemType - gemType used for getting the correct mapping
+                               
     """
 
     import ROOT as r

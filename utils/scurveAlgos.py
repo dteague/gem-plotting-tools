@@ -133,8 +133,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     # Get ChipID's
     import numpy as np
     import root_numpy as rp
-    ##### NEED TO FIX
-    #### VERY TEMPORARY
+    ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
     gemType = gemTypeMapping[rp.tree2array(scurveTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
@@ -249,27 +248,23 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         else:
             vSummaryPlots[vfat] = r.TH2D('vSummaryPlots{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [0-63];63 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
-                    64,-0.5,63.5,256,
-                    yMin_Charge,
-                    yMax_Charge)
+                    maxChans/2, -0.5, maxChans/2-0.5,
+                    256, yMin_Charge, yMax_Charge)
             vSummaryPlots[vfat].GetYaxis().SetTitleOffset(1.5)
             vSummaryPlotsNoMaskedChan[vfat] = r.TH2D('vSummaryPlotsNoMaskedChan{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [0-63];63 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
-                    64,-0.5,63.5,256,
-                    yMin_Charge,
-                    yMax_Charge)
+                    maxChans/2, -0.5, maxChans/2-0.5,
+                    256, yMin_Charge, yMax_Charge)
             vSummaryPlotsNoMaskedChan[vfat].GetYaxis().SetTitleOffset(1.5)
             vSummaryPlotsPanPin2[vfat] = r.TH2D('vSummaryPlotsPanPin2_{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [64-127];127 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
-                    64,-0.5,63.5,256,
-                    yMin_Charge,
-                    yMax_Charge)
+                    maxChans/2, -0.5, maxChans/2-0.5,
+                    256, yMin_Charge, yMax_Charge)
             vSummaryPlotsPanPin2[vfat].GetYaxis().SetTitleOffset(1.5)
             vSummaryPlotsNoMaskedChanPanPin2[vfat] = r.TH2D('vSummaryPlotsNoMaskedChanPanPin2_{0}'.format(vfat),
                     'VFAT{0} chipID {1} Pins [64-127];127 - Panasonic Pin;{2} #left(fC#right)'.format(vfat,chipID,dacName),
-                    64,-0.5,63.5,256,
-                    yMin_Charge,
-                    yMax_Charge)
+                    maxChans/2, -0.5, maxChans/2-0.5,
+                    256, yMin_Charge, yMax_Charge)
             vSummaryPlotsNoMaskedChanPanPin2[vfat].GetYaxis().SetTitleOffset(1.5)
             pass
         for chan in range (0,maxChans):
@@ -879,7 +874,6 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
         h2DetENC_All.GetYaxis().SetTitle("Noise #left(fC#right)")
         h2DetENC_All.SetFillColor(400)
         h2DetENC_All.Draw("candle1")
-        # h2DetENC_All.Draw("colz")
         canvasBoxPlot_ENC.Update()
         canvasBoxPlot_ENC.SaveAs("{0}/h2ScurveSigmaDist_All.png".format(outputDir))
         canvasBoxPlot_ENC.Close()
@@ -1101,6 +1095,7 @@ def fill2DScurveSummaryPlots(scurveTree, vfatHistos, vfatChanLUT, vfatHistosPanP
         # Fill Summary Histogram 
         if lutType is mappingNames[1] and vfatHistosPanPin2 is not None:
             if (stripPinOrChan < 64):
+                #### Off by one error...?
                 vfatHistos[event.vfatN].SetBinContent(63-(stripPinOrChan+1),chargeBin,event.Nhits)
                 vfatHistos[event.vfatN].SetBinError(63-(stripPinOrChan+1),chargeBin,sqrt(event.Nhits))
                 pass

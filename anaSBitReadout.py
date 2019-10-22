@@ -82,9 +82,9 @@ if __name__ == '__main__':
     size = ((args.GEBtype).lower())
     mapping = args.mapping
 
-    #### NEED TO SPECIFY READING
+    ##### FIXME
     gemType="ge11"
-    #### END
+    ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
     from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
@@ -236,7 +236,7 @@ if __name__ == '__main__':
         vfat_h_ch[vfat] = r.TH1F("h_VFAT{0}_chan_vs_hit".format(vfat), "VFAT{0}".format(vfat), maxChans, 0., maxChans)
         vfat_h_delay[vfat] = r.TH1F("h_VFAT{0}_L1A_sbit_delay".format(vfat), "VFAT{0}: L1A delay".format(vfat), 4096, 0., 4096.)
         vfat_h_sbitSize[vfat] = r.TH1F("h_VFAT{0}_sbitSize_vs_hit".format(vfat), "VFAT{0}: SBIT Size".format(vfat), 8, 0., 8.)
-        vfat_h_strip[vfat] = r.TH1F("h_VFAT{0}_strips_vs_hit".format(vfat), "VFAT{0}".format(vfat), 128, 0., 128.)
+        vfat_h_strip[vfat] = r.TH1F("h_VFAT{0}_strips_vs_hit".format(vfat), "VFAT{0}".format(vfat), maxChans, 0., maxChans)
 
         vfat_h_ch[vfat].SetXTitle("Chan Num")
         vfat_h_ch[vfat].SetFillColorAlpha(r.kBlue, 0.35)
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     ieta_h_delay = ndict()
 
     for ieta in range(1, maxiEta+1):
-        ieta_h_strip[ieta] = r.TH1F("h_ieta{0}_strips_vs_hit".format(ieta), "i#eta = {0} | i#phi (1,2,3)".format(ieta), 128*maxiPhi, 0., 128.*maxiPhi)
+        ieta_h_strip[ieta] = r.TH1F("h_ieta{0}_strips_vs_hit".format(ieta), "i#eta = {0} | i#phi (1,2,3)".format(ieta), maxChans*maxiPhi, 0., maxChans*maxiPhi)
         ieta_h_ch[ieta] = r.TH1F("h_ieta{0}_chan_vs_hit".format(ieta), "i#eta = {0} | i#phi (1,2,3)".format(ieta), maxChans*maxiPhi, 0., maxChans*maxiPhi)
         ieta_h_sbitSize[ieta] = r.TH1F("h_ieta{0}_sbitSize_vs_hit".format(ieta), "i#eta = {0} SBIT Size".format(ieta), 8, 0., 8.)
         ieta_h_delay[ieta] = r.TH1F("h_ieta{0}_L1A_Sbit_delay".format(ieta), "i#eta = {0} L1A delay".format(ieta), 4096, 0., 4096.)
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     # initializing 2Dhisto
     dict_h2d_ieta_strip = ndict()
     dict_h2d_ieta_ch = ndict()
-    dict_h2d_ieta_strip[0] = r.TH2I('h2d_ieta_strip', 'Strips summary        (i#phi = 1,2,3);strip number;i#eta', 128*maxiPhi, 0, 128*maxiPhi, maxiEta, 0.5, 0.5+maxiEta)
+    dict_h2d_ieta_strip[0] = r.TH2I('h2d_ieta_strip', 'Strips summary        (i#phi = 1,2,3);strip number;i#eta', maxChans*maxiPhi, 0, maxChans*maxiPhi, maxiEta, 0.5, 0.5+maxiEta)
     dict_h2d_ieta_ch[0] = r.TH2I('h_2d_ieta_ch', 'Channels summary        (i#phi = 1,2,3);chan number;i#eta', maxChans*maxiPhi, 0, maxChans*maxiPhi, maxiEta, 0.5, 0.5+maxiEta)
 
     # loop over all branch names but the first (evnt num)
@@ -320,16 +320,16 @@ if __name__ == '__main__':
             vfat_h_sbitSize[vfatN[0]].Fill(sbitSize[0])
 
             # filling ieta 1Dhistos
-            ieta_h_strip[eta].Fill((phi-1)*128+strip[0])
-            ieta_h_strip[eta].Fill((phi-1)*128+strip[1])
+            ieta_h_strip[eta].Fill((phi-1)*maxChans+strip[0])
+            ieta_h_strip[eta].Fill((phi-1)*maxChans+strip[1])
             ieta_h_ch[eta].Fill((phi-1)*maxChans+vfatCH[0])
             ieta_h_ch[eta].Fill((phi-1)*maxChans+vfatCH[1])
             ieta_h_delay[eta].Fill(L1Delay[0])
             ieta_h_sbitSize[eta].Fill(sbitSize[0])
 
             # filling 2Dhisto
-            dict_h2d_ieta_strip[0].Fill(strip[0]+128*(phi-1), eta)
-            dict_h2d_ieta_strip[0].Fill(strip[1]+128*(phi-1), eta)
+            dict_h2d_ieta_strip[0].Fill(strip[0]+maxChans*(phi-1), eta)
+            dict_h2d_ieta_strip[0].Fill(strip[1]+maxChans*(phi-1), eta)
             dict_h2d_ieta_ch[0].Fill(vfatCH[0]+maxChans*(phi-1), eta)
             dict_h2d_ieta_ch[0].Fill(vfatCH[1]+maxChans*(phi-1), eta)
 
@@ -362,9 +362,9 @@ if __name__ == '__main__':
                 vfat_h_strip[vfatN[0]].Fill(strip[i])
                 vfat_h_ch[vfatN[0]].Fill(vfatCH[i])
 
-                ieta_h_strip[eta].Fill((phi-1)*128+strip[i])
+                ieta_h_strip[eta].Fill((phi-1)*maxChans+strip[i])
                 ieta_h_ch[eta].Fill((phi-1)*maxChans+vfatCH[i])
-                dict_h2d_ieta_strip[0].Fill(strip[i]+128*(phi-1), eta)
+                dict_h2d_ieta_strip[0].Fill(strip[i]+maxChans*(phi-1), eta)
                 dict_h2d_ieta_ch[0].Fill(vfatCH[i]+maxChans*(phi-1), eta)
                 pass
             outT.Fill()
