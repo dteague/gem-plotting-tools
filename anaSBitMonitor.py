@@ -49,7 +49,7 @@ if __name__ == '__main__':
     ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
     
     print('Initializing histograms')
     from gempython.utils.nesteddict import nesteddict as ndict, flatten
@@ -491,7 +491,7 @@ if __name__ == '__main__':
     print("| :---: | :------: | :-------: | :----------: |")
     fileMisMappedSbits.write("| :---: | :------: | :-------: | :----------: |\n")
     for idx in range(0,len(wrongSBITMapping)):
-        print("| {0} | {1} | {2} | {3} |".format(
+        print("| {0:5d} | {1:8d} | {2:9d} | {3:12d} |".format(
             wrongSBITMapping[idx]['vfatN'],
             wrongSBITMapping[idx]['vfatSBIT'],
             wrongSBITMapping[idx]['sbitSize'],
@@ -519,7 +519,7 @@ if __name__ == '__main__':
     print("| :--------: | :----------: | :----------: |")
     fileMisMappedVFATs.write("| :--------: | :----------: | :----------: |\n")
     for idx in range(0,len(wrongVFATMapping)):
-        print("| {0} | {1} | {2} |".format(
+        print("| {0:10d} | {1:12d} | {2:12d} |".format(
             wrongVFATMapping[idx]['vfatN'],
             wrongVFATMapping[idx]['vfatObs'],
             wrongVFATMapping[idx]['N_Mismatches']))

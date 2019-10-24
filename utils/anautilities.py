@@ -594,7 +594,7 @@ def get2DMapOfDetector(vfatChanLUT, obsData, mapName, zLabel, gemType="ge11"):
 
     import ROOT as r
     from ..mapping.chamberInfo import chamber_maxiEtaiPhiPair
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
     maxiEta, maxiPhi = chamber_maxiEtaiPhiPair[gemType]
     
     hRetMap = r.TH2F("ieta_vs_{0}_{1}".format(mapName,zLabel),"",maxiPhi*maxChans, -0.5, maxiPhi*maxChans-0.5, maxiEta, 0.5, maxiEta + 0.5)
@@ -1551,7 +1551,7 @@ def getSummaryCanvas(dictSummary, dictSummaryPanPin2=None, name='Summary', trimP
     import ROOT as r
     from ..mapping.chamberInfo import chamber_vfatPos2PadIdx, chamber_maxiEtaiPhiPair
     from gempython.tools.hw_constants import vfatsPerGemVariant
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
     
     legend = r.TLegend(0.75,0.7,0.88,0.88)
     r.gStyle.SetOptStat(0)

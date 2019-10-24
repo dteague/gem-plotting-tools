@@ -134,7 +134,7 @@ class ScanDataFitter(DeadChannelFinder):
         super(ScanDataFitter, self).__init__(nVFats)
 
         from gempython.utils.nesteddict import nesteddict as ndict
-        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
         r.gStyle.SetOptStat(0)
 
         self.Nev = ndict()
@@ -245,7 +245,7 @@ class ScanDataFitter(DeadChannelFinder):
 
         r.gROOT.SetBatch(True)
         r.gStyle.SetOptStat(0)
-        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
     
         random = r.TRandom3()
         random.SetSeed(0)

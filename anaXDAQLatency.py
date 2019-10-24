@@ -55,7 +55,7 @@ if __name__ == "__main__":
     ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
 
     # Open input file
     print("Opening input file: {0}".format(args.infile))

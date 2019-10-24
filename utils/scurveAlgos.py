@@ -135,12 +135,15 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
     import root_numpy as rp
     ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    gemType = gemTypeMapping[rp.tree2array(scurveTree, branches =[ 'gemType' ] )[0][0]]
+    if 'gemType' not in inFile.scurveTree.GetListOfBranches():
+        gemType = "ge11"
+    else:
+        gemType = gemTypeMapping[rp.tree2array(tree=inFile.scurveTree, branches =[ 'gemType' ] )[0][0]]
     print gemType
     ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
 
     if ((vfatList is not None) and ((min(vfatList) < 0) or (max(vfatList) > nVFATS-1))):
         raise ValueError("anaUltraScurve(): Either vfatList=None or entries in vfatList must be in [0,{0}]".format(nVFATS-1))
@@ -1041,7 +1044,7 @@ def fill2DScurveSummaryPlots(scurveTree, vfatHistos, vfatChanLUT, vfatHistosPanP
 
     # Check if lutType is expected
     if lutType not in mappingNames:
-        print("fill2DScurveSummaryPlots() - lutType '{0}' not supported".format{lutType})
+        print("fill2DScurveSummaryPlots() - lutType '{0}' not supported".format(lutType))
         print("fill2DScurveSummaryPlots() - I was expecting one of the following: ", mappingNames)
         raise LookupError
 
@@ -1081,7 +1084,7 @@ def fill2DScurveSummaryPlots(scurveTree, vfatHistos, vfatChanLUT, vfatHistosPanP
 
         # Get the channel, strip, or Pan Pin
         stripPinOrChan = vfatChanLUT[event.vfatN][lutType][event.vfatCH]
-        
+
         # Determine charge
         charge = calDAC2Q_m[event.vfatN]*event.vcal+calDAC2Q_b[event.vfatN]
         if checkCurrentPulse: #Potentially v3 electronics
@@ -1092,16 +1095,16 @@ def fill2DScurveSummaryPlots(scurveTree, vfatHistos, vfatChanLUT, vfatHistosPanP
         # Determine the binY that corresponds to this charge value
         chargeBin = first_index_gt(listOfBinEdgesY[event.vfatN], charge)-1
 
-        # Fill Summary Histogram 
+        # Fill Summary Histogram
+        from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
         if lutType is mappingNames[1] and vfatHistosPanPin2 is not None:
-            if (stripPinOrChan < 64):
-                #### Off by one error...?
-                vfatHistos[event.vfatN].SetBinContent(63-(stripPinOrChan+1),chargeBin,event.Nhits)
-                vfatHistos[event.vfatN].SetBinError(63-(stripPinOrChan+1),chargeBin,sqrt(event.Nhits))
+            if (stripPinOrChan < maxChans/2):
+                vfatHistos[event.vfatN].SetBinContent(maxChans/2-stripPinOrChan,chargeBin,event.Nhits)
+                vfatHistos[event.vfatN].SetBinError(maxChans/2-stripPinOrChan+1,chargeBin,sqrt(event.Nhits))
                 pass
             else:
-                vfatHistosPanPin2[event.vfatN].SetBinContent(127-(stripPinOrChan+1),chargeBin,event.Nhits)
-                vfatHistosPanPin2[event.vfatN].SetBinError(127-(stripPinOrChan+1),chargeBin,sqrt(event.Nhits))
+                vfatHistosPanPin2[event.vfatN].SetBinContent(maxChans-stripPinOrChan,chargeBin,event.Nhits)
+                vfatHistosPanPin2[event.vfatN].SetBinError(maxChans-stripPinOrChan,chargeBin,sqrt(event.Nhits))
                 pass
             pass
         else:

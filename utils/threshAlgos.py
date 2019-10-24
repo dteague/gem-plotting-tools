@@ -142,7 +142,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
     ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
 
     
     from gempython.utils.nesteddict import nesteddict as ndict
@@ -182,7 +182,7 @@ def anaUltraThreshold(args,thrFilename,GEBtype="short",outputDir=None,fileScurve
         dict_h2D_thrDAC[vfat] = r.TH2D(
                 'h_thrDAC_vs_ROBstr_VFAT{0}'.format(vfat),
                 'VFAT{0} chipID {1};{2};{3} [DAC units]'.format(vfat,chipID,stripChanOrPinName[1],dacName),
-                maxChans, -0.5, maxChan-0.5, THR_DAC_MAX+1,-0.5,THR_DAC_MAX+0.5)
+                maxChans, -0.5, maxChans-0.5, THR_DAC_MAX+1,-0.5,THR_DAC_MAX+0.5)
         dict_hMaxThrDAC[vfat] = r.TH1F(
                 'vfat{0}ChanMaxthrDAC'.format(vfat),
                 "VFAT{0} chipID {1}".format(vfat,chipID),
@@ -587,7 +587,7 @@ def calibrateThrDAC(args):
     # ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans
 
     # Do we load an optional vfat serial number table? (e.g. chips did not have serial number in efuse burned in)
     import numpy as np
@@ -1282,7 +1282,7 @@ def sbitRateAnalysis(chamber_config, rateTree, cutOffRate=0.0, debug=False, outf
 
     ##### FIXME
     from gempython.gemplotting.mapping.chamberInfo import gemTypeMapping
-    if 'gemType' not in inFile.latTree.GetListOfBranches():
+    if 'gemType' not in rateTree.GetListOfBranches():
         gemType = "ge11"
     else:
         gemType = gemTypeMapping[rp.tree2array(tree=inFile.latTree, branches =[ 'gemType' ] )[0][0]]

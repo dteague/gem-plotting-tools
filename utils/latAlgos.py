@@ -86,7 +86,7 @@ def anaUltraLatency(infilename, debug=False, latSigMaskRange=None, latSigRange=N
     ##### END
     from gempython.tools.hw_constants import vfatsPerGemVariant
     nVFATS = vfatsPerGemVariant[gemType]
-    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFATS as maxChans    
+    from gempython.gemplotting.mapping.chamberInfo import CHANNELS_PER_VFAT as maxChans    
 
 
     
