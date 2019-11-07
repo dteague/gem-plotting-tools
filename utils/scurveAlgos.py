@@ -177,7 +177,7 @@ def anaUltraScurve(args, scurveFilename, calFile=None, GEBtype="short", outputDi
             for vfat in range(nVFATS):
                 if vfat not in dict_chipID:
                     dict_chipID[vfat] = -1
-        dbInfo = getVFAT3CalInfo(dict_chipID.values(), debug=args.debug, gemType=gemType)
+        dbInfo = getVFAT3CalInfo(dict_chipID.values(), debug=args.debug)
         calDAC2Q_Slope = dbInfo['cal_dacm']
         calDAC2Q_Intercept = dbInfo['cal_dacb']
     else:

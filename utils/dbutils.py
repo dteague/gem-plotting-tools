@@ -26,7 +26,7 @@ knownViews = [
         'GEM_VFAT3_PROD_SUMMARY_V_RH'
         ]
 
-def getGEMDBView(view, vfatList=None, debug=False, gemType="ge11"):
+def getGEMDBView(view, vfatList=None, debug=False):
     """
     Gets the GEM DB view defined by view for the list of vfats provided by vfatList, or
     if no vfatList is provided the full view stored in the DB.
@@ -84,13 +84,13 @@ def getGEMDBView(view, vfatList=None, debug=False, gemType="ge11"):
             pass
         
         # Then add a 'vfatN' column to the output df; this increases row # to len(vfatList)
-        dfGEMView = joinOnVFATSerNum(vfatList,dfGEMView, gemType)
+        dfGEMView = joinOnVFATSerNum(vfatList,dfGEMView)
         
         pass
 
     return dfGEMView
 
-def getVFAT3CalInfo(vfatList, debug=False, gemType="ge11"):
+def getVFAT3CalInfo(vfatList, debug=False):
     """
     Gets from GEM_VFAT3_PROD_SUMMARY_V_RH view a subset of data that is necessary
     for VFAT calibration.  Specifically a pandas dataframe will be returned with
@@ -105,7 +105,7 @@ def getVFAT3CalInfo(vfatList, debug=False, gemType="ge11"):
     #When using multithreading, the threads pass information back in pickled format. Some exceptions in cx_Oracle cannot be pickled.
     #Thus, we check here whether the exception can be pickled, and if not rethrow it as an exception that can be.
     try:
-        df_vfatCalInfo = getVFAT3ProdSumView(vfatList, debug, gemType)
+        df_vfatCalInfo = getVFAT3ProdSumView(vfatList, debug)
     except Exception as err:
         import pickle
         try:
@@ -119,7 +119,7 @@ def getVFAT3CalInfo(vfatList, debug=False, gemType="ge11"):
         
     return df_vfatCalInfo[['vfatN','vfat3_ser_num', 'vfat3_barcode', 'iref', 'adc0m', 'adc1m', 'adc0b', 'adc1b', 'cal_dacm', 'cal_dacb']]
 
-def getVFAT3ConfView(vfatList, debug=False, gemType="ge11"):
+def getVFAT3ConfView(vfatList, debug=False):
     """
     Gets the GEM_VFAT3_CHIP_CONF_V_RH view in the GEM DB for a list of input VFATs.
 
@@ -129,9 +129,9 @@ def getVFAT3ConfView(vfatList, debug=False, gemType="ge11"):
     debug       - Prints additional info if true
     """
 
-    return getGEMDBView("GEM_VFAT3_CHIP_CONF_V_RH",vfatList,debug, gemType)
+    return getGEMDBView("GEM_VFAT3_CHIP_CONF_V_RH",vfatList,debug)
 
-def getVFAT3ProdSumView(vfatList, debug=False, gemType="ge11"):
+def getVFAT3ProdSumView(vfatList, debug=False):
     """
     Gets the GEM_VFAT3_PROD_SUMMARY_V_RH view in the GEM DB for a list of input VFATs.
 
@@ -141,7 +141,7 @@ def getVFAT3ProdSumView(vfatList, debug=False, gemType="ge11"):
     debug       - Prints additional info if true
     """
 
-    return getGEMDBView("GEM_VFAT3_PROD_SUMMARY_V_RH",vfatList,debug, gemType)
+    return getGEMDBView("GEM_VFAT3_PROD_SUMMARY_V_RH",vfatList,debug)
 
 def getVFATFilter(vfatList):
     """
@@ -162,7 +162,7 @@ def getVFATFilter(vfatList):
 
     return strRetFilter
 
-def joinOnVFATSerNum(vfatList, dfGEMView, gemType="ge11"):
+def joinOnVFATSerNum(vfatList, dfGEMView):
     """
     Creates a dataframe object from vfatList with keys 'vfat3_ser_num' and 'vfatN'.
     Then it joins this dataframe with dfGEMView using the 'vfat3_ser_num'.
@@ -173,7 +173,7 @@ def joinOnVFATSerNum(vfatList, dfGEMView, gemType="ge11"):
     from gempython.tools.hw_constants import vfatsPerGemVariant
     if 'vfat3_ser_num' in dfGEMView.columns:
         dfVFATPos = pd.DataFrame(
-                    {   'vfatN':[vfat for vfat in range(vfatsPerGemVariant[gemType])], 
+                    {   'vfatN':[vfat for vfat in range(len(vfatList))], 
                         'vfat3_ser_num':["0x{:x}".format(id) for id in vfatList]}
                 )
 
